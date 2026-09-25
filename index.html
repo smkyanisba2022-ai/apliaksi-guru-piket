@@ -3,172 +3,191 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Piket / E-Absensi SMK</title>
-  <!-- Tailwind CSS & FontAwesome Icons CDN -->
+  <title>E-Absensi & Piket Sekolah</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-  </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen pb-12">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
 
-  <!-- TOP HEADER NAVBAR -->
+  <!-- Header -->
   <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <i class="fa-solid fa-clipboard-user text-2xl text-indigo-200"></i>
-        <div>
-          <h1 class="font-bold text-lg leading-tight">E-PIKET SEKOLAH</h1>
-          <p class="text-xs text-indigo-200">Sistem Laporan & Absensi Harian</p>
-        </div>
+    <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-user text-xl"></i>
+        <h1 class="font-bold text-lg leading-tight">E-Piket Sekolah</h1>
       </div>
-      <div class="flex items-center space-x-2">
-        <span id="statusKoneksi" class="px-2.5 py-1 text-xs rounded-full bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
-        </span>
-      </div>
+      <div id="statusKoneksi"></div>
     </div>
   </header>
 
-  <!-- BANNER NOTIFIKASI OFFLINE (MODERN BANNER) -->
-  <div id="offlineBanner" class="hidden max-w-4xl mx-auto px-4 mt-4">
-    <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-      <div class="flex items-center space-x-3">
-        <i class="fa-solid fa-cloud-arrow-up text-amber-600 text-2xl"></i>
-        <div>
-          <p class="font-semibold text-amber-900 text-sm" id="offlineCountText">0 Catatan Tersimpan di HP</p>
-          <p class="text-xs text-amber-700">Data tersimpan lokal karena offline/koneksi buruk. Tekan upload saat online.</p>
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Banner Status Offline & Pending Upload -->
+    <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2 font-semibold text-amber-800 text-sm">
+          <i class="fa-solid fa-box-archive"></i>
+          <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
+        <button onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
       </div>
-      <button onclick="uploadDataOffline()" id="btnUploadBatch" class="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-        <i class="fa-solid fa-upload"></i> Upload Sekarang
+      <div id="offlineListContainer" class="max-h-28 overflow-y-auto space-y-1 text-xs mb-3"></div>
+      <button id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
       </button>
     </div>
-  </div>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-4xl mx-auto px-4 mt-6">
-
-    <!-- DATA PETUGAS PIKET CARD -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-6">
-      <h2 class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-user-shield"></i> Identitas Petugas Piket
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Informasi Umum / Petugas Piket -->
+    <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+      <div class="space-y-3">
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Nama Petugas Piket</label>
-          <input type="text" id="petugasPiket" placeholder="Masukkan nama Anda..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal & Waktu Realtime</label>
+          <input type="text" id="tanggalWaktu" readonly class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-600">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal & Waktu</label>
-          <input type="text" id="tanggalWaktu" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-200 text-slate-500 rounded-lg">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Petugas Piket <span class="text-rose-500">*</span></label>
+          <input type="text" id="petugasPiket" placeholder="Masukkan nama petugas piket" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
       </div>
     </div>
 
-    <!-- TAB NAVIGATION -->
-    <div class="flex border-b border-slate-200 mb-6 bg-white rounded-xl p-1 shadow-sm">
+    <!-- Navigasi Tab -->
+    <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
       <button id="tabBtnGuru" onclick="switchTab('guru')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow">
-        <i class="fa-solid fa-chalkboard-user mr-1.5"></i> Laporan Guru
+        <i class="fa-solid fa-chalkboard-user mr-1"></i> Izin Guru
       </button>
       <button id="tabBtnSiswa" onclick="switchTab('siswa')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
-        <i class="fa-solid fa-user-graduate mr-1.5"></i> Laporan Siswa
+        <i class="fa-solid fa-user-graduate mr-1"></i> Izin Siswa
       </button>
     </div>
 
-    <!-- FORM 1: LAPORAN GURU -->
-    <section id="formGuru" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-      <h2 class="text-base font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-        <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catat Kehadiran / Kendala Guru
+    <!-- FORM LAPORAN GURU -->
+    <form id="formGuru" onsubmit="handleSubmitedGuru(event)" class="bg-white rounded-xl shadow-sm p-4 border border-slate-200 space-y-3">
+      <h2 class="font-bold text-slate-700 text-sm border-b pb-2 flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Guru
       </h2>
-      <form onsubmit="handleSubmitedGuru(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Guru & Mapel</label>
-          <select id="selectGuru" required class="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="">-- Memuat Data Guru... --</option>
-          </select>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Jam Ke-</label>
-            <input type="text" id="guruJamKe" placeholder="Contoh: 1 - 3" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Jam Masuk</label>
-            <input type="time" id="guruJamMasuk" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Status Kehadiran</label>
-            <select id="guruStatus" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-              <option value="Hadir">Hadir</option>
-              <option value="Terlambat">Terlambat</option>
-              <option value="Izin">Izin</option>
-              <option value="Sakit">Sakit</option>
-              <option value="Tanpa Keterangan">Tanpa Keterangan</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Tugas / Materi Pembelajaran</label>
-          <textarea id="guruTugas" rows="2" placeholder="Catat materi/tugas yang ditinggalkan (jika guru berhalangan)..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-        </div>
-
-        <button type="submit" id="btnSubmitGuru" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
-          <i class="fa-solid fa-paper-plane"></i> Simpan Laporan Guru
-        </button>
-      </form>
-    </section>
-
-    <!-- FORM 2: LAPORAN SISWA -->
-    <section id="formSiswa" class="hidden bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-      <h2 class="text-base font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-        <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catat Pelanggaran / Ketidakhadiran Siswa
-      </h2>
-      <form onsubmit="handleSubmitedSiswa(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Siswa</label>
-          <select id="selectSiswa" required class="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="">-- Memuat Data Siswa... --</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Jam Ke-</label>
-            <input type="text" id="siswaJamKe" placeholder="Contoh: 2 - 4" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Status / Keterangan</label>
-            <select id="siswaStatus" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-              <option value="Izin Kebelakang/Meninggalkan Kelas">Izin Kebelakang / Keluar</option>
-              <option value="Terlambat Masuk Sekolah">Terlambat Masuk Sekolah</option>
-              <option value="Sakit di UKS">Sakit di UKS</option>
-              <option value="Alpa / Bolos">Alpa / Bolos</option>
-              <option value="Pulang Awal (Izin)">Pulang Awal (Izin)</option>
-            </select>
-          </div>
-        </div>
-
-        <button type="submit" id="btnSubmitSiswa" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-bold rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
-          <i class="fa-solid fa-paper-plane"></i> Simpan Laporan Siswa
-        </button>
-      </form>
-    </section>
-
-    <!-- RIWAYAT PENYIMPANAN OFFLINE (PREVIEW LOKAL) -->
-    <section id="previewOffline" class="mt-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-      <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
-        <span><i class="fa-solid fa-list-check text-indigo-600 mr-2"></i> Daftar Catatan Offline (Belum Terunggah)</span>
-        <button onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline"><i class="fa-solid fa-trash"></i> Bersihkan</button>
-      </h3>
-      <div id="offlineListContainer" class="space-y-2 text-xs">
-        <p class="text-slate-400 italic">Tidak ada catatan offline terpending.</p>
+      <!-- Nama Guru (Datalist Autocomplete) -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Guru <span class="text-rose-500">*</span></label>
+        <input type="text" id="inputNamaGuru" list="listGuru" oninput="onGuruChanged()" placeholder="Ketik nama guru..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <datalist id="listGuru"></datalist>
       </div>
-    </section>
+
+      <!-- Mapel (Otomatis menyesuaikan guru) -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
+        <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Pilih Guru Terlebih Dahulu --</option>
+        </select>
+      </div>
+
+      <!-- Jam Ke (Dropdown 1-9) -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
+          <select id="guruJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+            <option value="">-- Pilih --</option>
+            <option value="Jam ke 1">Jam ke 1</option>
+            <option value="Jam ke 2">Jam ke 2</option>
+            <option value="Jam ke 3">Jam ke 3</option>
+            <option value="Jam ke 4">Jam ke 4</option>
+            <option value="Jam ke 5">Jam ke 5</option>
+            <option value="Jam ke 6">Jam ke 6</option>
+            <option value="Jam ke 7">Jam ke 7</option>
+            <option value="Jam ke 8">Jam ke 8</option>
+            <option value="Jam ke 9">Jam ke 9</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Masuk</label>
+          <input type="time" id="guruJamMasuk" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <!-- Status Ketidakhadiran -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Keterangan <span class="text-rose-500">*</span></label>
+        <select id="guruStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Pilih Status --</option>
+          <option value="Izin">Izin</option>
+          <option value="Sakit">Sakit</option>
+          <option value="Dinas Luar">Dinas Luar</option>
+          <option value="Terlambat">Terlambat</option>
+          <option value="Tanpa Keterangan">Tanpa Keterangan</option>
+        </select>
+      </div>
+
+      <!-- Tugas / Materi -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Tugas / Catatan Materi</label>
+        <textarea id="guruTugas" rows="2" placeholder="Catatan tugas yang ditinggalkan..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+      </div>
+
+      <!-- Action Buttons Guru -->
+      <div class="pt-2 grid grid-cols-2 gap-2">
+        <button type="button" onclick="simpanManualOffline('guru')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
+          <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
+        </button>
+        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
+          <i class="fa-solid fa-paper-plane"></i> Upload Langsung
+        </button>
+      </div>
+    </form>
+
+    <!-- FORM LAPORAN SISWA -->
+    <form id="formSiswa" onsubmit="handleSubmitedSiswa(event)" class="hidden bg-white rounded-xl shadow-sm p-4 border border-slate-200 space-y-3">
+      <h2 class="font-bold text-slate-700 text-sm border-b pb-2 flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Siswa
+      </h2>
+
+      <!-- Nama Siswa (Datalist Autocomplete) -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Siswa <span class="text-rose-500">*</span></label>
+        <input type="text" id="inputNamaSiswa" list="listSiswa" placeholder="Ketik nama siswa..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <datalist id="listSiswa"></datalist>
+      </div>
+
+      <!-- Jam Ke (Dropdown 1-9) -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
+        <select id="siswaJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Pilih --</option>
+          <option value="Jam ke 1">Jam ke 1</option>
+          <option value="Jam ke 2">Jam ke 2</option>
+          <option value="Jam ke 3">Jam ke 3</option>
+          <option value="Jam ke 4">Jam ke 4</option>
+          <option value="Jam ke 5">Jam ke 5</option>
+          <option value="Jam ke 6">Jam ke 6</option>
+          <option value="Jam ke 7">Jam ke 7</option>
+          <option value="Jam ke 8">Jam ke 8</option>
+          <option value="Jam ke 9">Jam ke 9</option>
+        </select>
+      </div>
+
+      <!-- Status Keterangan Siswa -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Alasan <span class="text-rose-500">*</span></label>
+        <select id="siswaStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Pilih Keterangan --</option>
+          <option value="Izin Pulang (Sakit)">Izin Pulang (Sakit)</option>
+          <option value="Izin Meninggalkan Sekolah">Izin Meninggalkan Sekolah</option>
+          <option value="Terlambat Masuk">Terlambat Masuk</option>
+          <option value="Sakit di UKS">Sakit di UKS</option>
+          <option value="Alpha / Membolos">Alpha / Membolos</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons Siswa -->
+      <div class="pt-2 grid grid-cols-2 gap-2">
+        <button type="button" onclick="simpanManualOffline('siswa')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
+          <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
+        </button>
+        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
+          <i class="fa-solid fa-paper-plane"></i> Upload Langsung
+        </button>
+      </div>
+    </form>
 
   </main>
 
