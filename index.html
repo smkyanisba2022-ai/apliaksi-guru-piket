@@ -23,15 +23,27 @@
   <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
     <!-- Banner Status Offline & Pending Upload -->
-    <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700">
+    <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700 transition-all">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2 font-semibold text-amber-800 text-sm">
           <i class="fa-solid fa-box-archive"></i>
           <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
-        <button type="button" onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
+        <div class="flex items-center gap-3">
+          <!-- Tombol Minimize / Sembunyikan -->
+          <button type="button" onclick="toggleOfflineList()" id="btnToggleList" class="text-xs text-amber-800 hover:text-amber-950 font-medium flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+            <span id="txtToggleList">Sembunyikan</span>
+            <i id="iconToggleList" class="fa-solid fa-chevron-up"></i>
+          </button>
+          <button type="button" onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
+        </div>
       </div>
-      <div id="offlineListContainer" class="max-h-28 overflow-y-auto space-y-1 text-xs mb-3"></div>
+
+      <!-- Kontainer List (Bisa di-minimize) -->
+      <div id="offlineContentWrapper">
+        <div id="offlineListContainer" class="max-h-28 overflow-y-auto space-y-1 text-xs mb-3"></div>
+      </div>
+
       <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
         <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
       </button>
@@ -67,7 +79,6 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Guru
       </h2>
 
-      <!-- Select Nama Guru -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Guru <span class="text-rose-500">*</span></label>
         <select id="selectGuru" onchange="onGuruSelectChanged()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -75,7 +86,6 @@
         </select>
       </div>
 
-      <!-- Select Mata Pelajaran -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
         <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -83,7 +93,6 @@
         </select>
       </div>
 
-      <!-- Jam Ke & Jam Masuk -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
@@ -106,7 +115,6 @@
         </div>
       </div>
 
-      <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Keterangan <span class="text-rose-500">*</span></label>
         <select id="guruStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -119,13 +127,11 @@
         </select>
       </div>
 
-      <!-- Tugas -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Tugas / Catatan Materi</label>
         <textarea id="guruTugas" rows="2" placeholder="Catatan tugas yang ditinggalkan..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
       </div>
 
-      <!-- Tombol Aksi -->
       <div class="pt-2 grid grid-cols-2 gap-2">
         <button type="button" onclick="simpanManualOffline('guru')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
           <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
@@ -142,7 +148,6 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Siswa
       </h2>
 
-      <!-- Select Nama Siswa dan Kelas -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Siswa & Kelas <span class="text-rose-500">*</span></label>
         <select id="selectSiswa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -150,7 +155,6 @@
         </select>
       </div>
 
-      <!-- Jam Ke -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
         <select id="siswaJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -167,7 +171,6 @@
         </select>
       </div>
 
-      <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Alasan <span class="text-rose-500">*</span></label>
         <select id="siswaStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -180,7 +183,6 @@
         </select>
       </div>
 
-      <!-- Tombol Aksi -->
       <div class="pt-2 grid grid-cols-2 gap-2">
         <button type="button" onclick="simpanManualOffline('siswa')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
           <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
