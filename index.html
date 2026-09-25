@@ -23,30 +23,30 @@
   <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
     <!-- Banner Status Offline & Pending Upload -->
-    <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700 transition-all">
+    <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2 font-semibold text-amber-800 text-sm">
           <i class="fa-solid fa-box-archive"></i>
           <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
-        <div class="flex items-center gap-3">
-          <!-- Tombol Minimize / Sembunyikan -->
-          <button type="button" onclick="toggleOfflineList()" id="btnToggleList" class="text-xs text-amber-800 hover:text-amber-950 font-medium flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+        <div class="flex items-center gap-2">
+          <!-- Tombol Sembunyikan / Tampilkan -->
+          <button type="button" id="btnToggleList" class="text-xs text-amber-900 bg-amber-200/70 hover:bg-amber-200 px-2.5 py-1 rounded-md border border-amber-300 font-semibold flex items-center gap-1 cursor-pointer transition-all">
             <span id="txtToggleList">Sembunyikan</span>
-            <i id="iconToggleList" class="fa-solid fa-chevron-up"></i>
+            <i id="iconToggleList" class="fa-solid fa-chevron-up text-[10px]"></i>
           </button>
-          <button type="button" onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
+          <!-- Tombol Hapus Semua -->
+          <button type="button" onclick="clearAllOfflineData()" class="text-xs text-rose-600 hover:text-rose-800 font-medium hover:underline">Hapus Semua</button>
         </div>
       </div>
 
-      <!-- Kontainer List (Bisa di-minimize) -->
-      <div id="offlineContentWrapper">
-        <div id="offlineListContainer" class="max-h-28 overflow-y-auto space-y-1 text-xs mb-3"></div>
+      <!-- Wrapper yang di-minimize -->
+      <div id="offlineContentWrapper" class="transition-all">
+        <div id="offlineListContainer" class="max-h-36 overflow-y-auto space-y-1.5 text-xs mb-3 pr-1"></div>
+        <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
+        </button>
       </div>
-
-      <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
-      </button>
     </div>
 
     <!-- Informasi Umum / Petugas Piket -->
