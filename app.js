@@ -5,68 +5,13 @@ let masterSiswa = [];
 let masterGuru = [];
 let isOfflineListMinimized = false;
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupRealtimeClock();
-  checkOnlineStatus();
-  loadMasterData();
-  renderOfflineList();
-
-  // Pasang Listener tombol tab menggunakan event listener murni agar tidak terpicu form submit
-  const btnGuru = document.getElementById("tabBtnGuru");
-  const btnSiswa = document.getElementById("tabBtnSiswa");
-  const btnPantau = document.getElementById("tabBtnPantau");
-
-  if (btnGuru) {
-    btnGuru.addEventListener("click", (e) => {
-      e.preventDefault();
-      switchTab('guru');
-    });
+// 1. FUNGSI SWITCH TAB (Ditaruh paling atas agar langsung siap diakses HTML)
+window.switchTab = function(e, tab) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
   }
 
-  if (btnSiswa) {
-    btnSiswa.addEventListener("click", (e) => {
-      e.preventDefault();
-      switchTab('siswa');
-    });
-  }
-
-  if (btnPantau) {
-    btnPantau.addEventListener("click", (e) => {
-      e.preventDefault();
-      switchTab('pantau');
-    });
-  }
-
-  window.addEventListener("online", checkOnlineStatus);
-  window.addEventListener("offline", checkOnlineStatus);
-});
-
-// 1. FUNGSI WAKTU REALTIME
-function setupRealtimeClock() {
-  const el = document.getElementById("tanggalWaktu");
-  const update = () => {
-    const now = new Date();
-    if (el) el.value = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
-  };
-  update();
-  setInterval(update, 1000);
-}
-
-// 2. STATUS KONEKSI ONLINE / OFFLINE
-function checkOnlineStatus() {
-  const badge = document.getElementById("statusKoneksi");
-  if (!badge) return;
-  if (navigator.onLine) {
-    badge.className = "px-2.5 py-1 text-xs rounded-full bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
-    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online`;
-  } else {
-    badge.className = "px-2.5 py-1 text-xs rounded-full bg-rose-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
-    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white"></span> Offline`;
-  }
-}
-
-// 3. FUNGSI PERPINDAHAN TAB (GURU, SISWA, PANTAU)
-function switchTab(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
   const secP = document.getElementById("sectionPantau");
@@ -78,17 +23,17 @@ function switchTab(tab) {
   const defaultBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all cursor-pointer";
   const activeBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow cursor-pointer";
 
-  // Sembunyikan semua elemen
+  // Sembunyikan semua section
   if (formG) formG.classList.add("hidden");
   if (formS) formS.classList.add("hidden");
   if (secP) secP.classList.add("hidden");
 
-  // Reset kelas tombol
+  // Reset tampilan kelas tombol
   if (btnG) btnG.className = defaultBtnClass;
   if (btnS) btnS.className = defaultBtnClass;
   if (btnP) btnP.className = defaultBtnClass;
 
-  // Aktifkan tab pilihan
+  // Tampilkan tab yang dipilih
   if (tab === 'guru') {
     if (formG) formG.classList.remove("hidden");
     if (btnG) btnG.className = activeBtnClass;
@@ -101,6 +46,40 @@ function switchTab(tab) {
     
     // Panggil data rekapitulasi monitoring
     loadDataPantau();
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupRealtimeClock();
+  checkOnlineStatus();
+  loadMasterData();
+  renderOfflineList();
+
+  window.addEventListener("online", checkOnlineStatus);
+  window.addEventListener("offline", checkOnlineStatus);
+});
+
+// 2. FUNGSI WAKTU REALTIME
+function setupRealtimeClock() {
+  const el = document.getElementById("tanggalWaktu");
+  const update = () => {
+    const now = new Date();
+    if (el) el.value = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+  };
+  update();
+  setInterval(update, 1000);
+}
+
+// 3. STATUS KONEKSI ONLINE / OFFLINE
+function checkOnlineStatus() {
+  const badge = document.getElementById("statusKoneksi");
+  if (!badge) return;
+  if (navigator.onLine) {
+    badge.className = "px-2.5 py-1 text-xs rounded-full bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online`;
+  } else {
+    badge.className = "px-2.5 py-1 text-xs rounded-full bg-rose-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white"></span> Offline`;
   }
 }
 
@@ -137,7 +116,6 @@ async function loadDataPantau() {
           </thead>
           <tbody class="bg-white">`;
 
-        // Mengurutkan dari laporan terbaru (index terbesar)
         for (let i = data.guru.length - 1; i >= 1; i--) {
           const row = data.guru[i];
           html += `<tr class="border-b hover:bg-slate-50">
