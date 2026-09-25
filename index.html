@@ -94,24 +94,24 @@
       border-left: 4px solid var(--primary-color);
       border-radius: 8px;
       background-color: #f8fafc;
-      transition: transform 0.1s ease;
     }
     .list-item-card.guru-item {
       border-left-color: #ef4444;
     }
 
-    .badge-count {
-      background-color: rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 2px 8px;
+    .badge-offline-queue {
+      background-color: #f59e0b;
+      color: white;
       font-size: 0.8rem;
+      border-radius: 10px;
+      padding: 6px 12px;
     }
   </style>
 </head>
 <body class="pb-5">
 
   <!-- NAVBAR -->
-  <nav class="navbar navbar-dark navbar-custom sticky-top mb-4">
+  <nav class="navbar navbar-dark navbar-custom sticky-top mb-3">
     <div class="container" style="max-width: 650px;">
       <div class="d-flex justify-content-between align-items-center w-100 px-2">
         <div class="d-flex align-items-center gap-2">
@@ -136,6 +136,16 @@
   </nav>
 
   <div class="container" style="max-width: 650px;">
+
+    <!-- INDIKATOR ANTREAN OFFLINE -->
+    <div id="boxAntreanOffline" class="alert alert-warning p-2 mb-3 align-items-center justify-content-between rounded-3 shadow-sm" style="display: none;">
+      <div class="small fw-bold text-dark">
+        <i class="fa-solid fa-cloud-arrow-up me-1"></i> <span id="textJumlahAntrean">0</span> Laporan tersimpan di HP.
+      </div>
+      <button class="btn btn-sm btn-warning text-dark fw-bold py-1 px-2" onclick="uploadAntreanOffline()">
+        Upload Sekarang
+      </button>
+    </div>
 
     <!-- INFORMASI UTAMA PIKET -->
     <div class="card card-custom p-3 mb-3">
@@ -290,10 +300,14 @@
 
     </div>
 
-    <!-- TOMBOL SUBMIT LAPORAN -->
-    <div class="card card-custom p-3 shadow-lg border-0">
-      <button class="btn btn-success btn-lg w-100 rounded-3 py-3 fw-bold text-uppercase shadow-sm" onclick="kirimLaporan()" style="letter-spacing: 0.5px;">
+    <!-- TOMBOL AKSI UTAMA -->
+    <div class="card card-custom p-3 shadow-lg border-0 d-flex flex-column gap-2">
+      <button class="btn btn-success btn-lg w-100 rounded-3 py-3 fw-bold text-uppercase shadow-sm" onclick="kirimLaporan(false)">
         <i class="fa-solid fa-paper-plane me-2"></i> Upload Laporan ke Pusat
+      </button>
+      
+      <button class="btn btn-outline-warning w-100 rounded-3 py-2 fw-bold" onclick="kirimLaporan(true)">
+        <i class="fa-solid fa-floppy-disk me-2"></i> Simpan Catatan Offline (Keliling Kelas)
       </button>
     </div>
 
@@ -310,7 +324,10 @@
     let siswaList = [];
     let guruList = [];
 
-    window.addEventListener('online', updateStatusKoneksi);
+    window.addEventListener('online', () => {
+      updateStatusKoneksi();
+      uploadAntreanOffline();
+    });
     window.addEventListener('offline', updateStatusKoneksi);
 
     window.onload = function() {
@@ -329,6 +346,7 @@
       }
 
       muatDrafLokal();
+      cekAntreanOffline();
     };
 
     function updateStatusKoneksi() {
@@ -362,7 +380,7 @@
             localStorage.setItem('masterSiswa', JSON.stringify(masterSiswa));
             localStorage.setItem('masterGuru', JSON.stringify(masterGuru));
             populateDatalists();
-            alert(' Master Data Berhasil Diperbarui!');
+            alert('Master Data Berhasil Diperbarui!');
           }
         })
         .catch(err => alert('Gagal mengambil Master Data. Cek koneksi internet!'));
@@ -531,7 +549,7 @@
       simpanDrafLokal();
     }
 
-    // LOCAL STORAGE / DRAF
+    // MANAJEMEN DRAF & OFFLINE
     function simpanDrafLokal() {
       const draf = {
         tanggal: document.getElementById('tglPiket').value,
@@ -563,18 +581,14 @@
       renderGuru();
     }
 
-    function kirimLaporan() {
+    // PENGIRIMAN DATA KE GOOGLE APPS SCRIPT
+    function kirimLaporan(paksaOffline = false) {
       const tglRaw = document.getElementById('tglPiket').value;
       const petugas = document.getElementById('namaPetugas').value.trim();
 
       if (!petugas) { alert('Silakan isi Nama Petugas Piket terlebih dahulu!'); return; }
       if (siswaList.length === 0 && guruList.length === 0) {
         alert('Belum ada data Siswa maupun Guru yang ditambahkan!');
-        return;
-      }
-
-      if (!navigator.onLine) {
-        alert('Status HP sedang OFFLINE. Laporan tersimpan di memori HP. Tekan Upload jika koneksi kembali ONLINE!');
         return;
       }
 
@@ -588,22 +602,85 @@
         guruList: guruList
       };
 
-      if (!confirm('Apakah Anda yakin ingin mengirim laporan harian ini ke Spreadsheet Pusat?')) return;
+      // Simpan Ke Antrean Offline jika HP sedang offline atau ditekan tombol Offline
+      if (paksaOffline || !navigator.onLine) {
+        masukkanKeAntreanOffline(payload);
+        alert(' Catatan Laporan Berhasil Disimpan di Memori HP!\n\nLaporan ini akan otomatis diunggah begitu HP Anda terhubung ke internet.');
+        bersihkanDrafLokal();
+        return;
+      }
 
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.status === 'success') {
-          alert(' Laporan Berhasil Dikirim ke Spreadsheet!');
+      if (!confirm('Apakah Anda yakin ingin mengirim laporan harian ini ke Pusat?')) return;
+
+      // Kirim via Form Data untuk menghindari Masalah CORS Google Apps Script
+      sendDataToAppsScript(payload)
+        .then(() => {
+          alert(' Laporan Berhasil Dikirim ke Spreadsheet Pusat!');
           bersihkanDrafLokal();
-        } else {
-          alert('Gagal mengirim: ' + res.message);
+        })
+        .catch(() => {
+          masukkanKeAntreanOffline(payload);
+          alert('Gagal mengirim karena jaringan lambat. Laporan Anda otomatis diamankan ke Penyimpanan Offline HP!');
+          bersihkanDrafLokal();
+        });
+    }
+
+    function sendDataToAppsScript(dataObj) {
+      return fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Solusi Ampuh Mengatasi CORS Error Google Apps Script
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj)
+      });
+    }
+
+    // MANAJEMEN ANTREAN LAPORAN OFFLINE
+    function masukkanKeAntreanOffline(payload) {
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      antrean.push(payload);
+      localStorage.setItem('antreanOfflinePiket', JSON.stringify(antrean));
+      cekAntreanOffline();
+    }
+
+    function cekAntreanOffline() {
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      const box = document.getElementById('boxAntreanOffline');
+      const text = document.getElementById('textJumlahAntrean');
+
+      if (antrean.length > 0) {
+        box.classList.remove('d-none');
+        box.classList.add('d-flex');
+        text.innerText = antrean.length;
+      } else {
+        box.classList.remove('d-flex');
+        box.classList.add('d-none');
+      }
+    }
+
+    async function uploadAntreanOffline() {
+      if (!navigator.onLine) {
+        alert('HP Anda masih OFFLINE. Hubungkan internet untuk mengunggah.');
+        return;
+      }
+
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      if (antrean.length === 0) return;
+
+      if (!confirm(`Ada ${antrean.length} laporan tersimpan di HP. Upload sekarang ke Spreadsheet Pusat?`)) return;
+
+      let suksesCount = 0;
+      for (let i = 0; i < antrean.length; i++) {
+        try {
+          await sendDataToAppsScript(antrean[i]);
+          suksesCount++;
+        } catch (e) {
+          console.error(e);
         }
-      })
-      .catch(err => alert('Terjadi kesalahan jaringan saat mengunggah. Laporan Anda tetap tersimpan aman secara lokal.'));
+      }
+
+      localStorage.removeItem('antreanOfflinePiket');
+      cekAntreanOffline();
+      alert(`Berhasil mengunggah ${suksesCount} Laporan Offline ke Pusat!`);
     }
   </script>
 </body>
