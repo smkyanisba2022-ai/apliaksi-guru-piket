@@ -1,190 +1,687 @@
-// GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyVLiApj7i0pE54XzG_oeO8u5rSNbBeem6fu_17wSUk5MWo8wLF2Haa7cjDtVqM9FEZ/exec";
-
-let masterSiswa = [];
-let masterGuru = [];
-
-// 1. Inisialisasi saat aplikasi pertama kali dibuka
-document.addEventListener("DOMContentLoaded", () => {
-  loadMasterData();
-  updateOfflineUI();
-});
-
-// 2. Fungsi Mengambil Master Data
-async function loadMasterData() {
-  try {
-    const response = await fetch(`${SCRIPT_URL}?action=get_master`);
-    const data = await response.json();
-
-    if (data.status === "success") {
-      masterSiswa = data.siswa;
-      masterGuru = data.guru;
-      
-      // Simpan backup master data ke localStorage agar bisa dipakai saat offline
-      localStorage.setItem("master_siswa_cache", JSON.stringify(masterSiswa));
-      localStorage.setItem("master_guru_cache", JSON.stringify(masterGuru));
-      
-      console.log("Master Data Berhasil Dimuat dari Server");
-      populateDropdowns();
-    } else {
-      throw new Error(data.message);
-    }
-  } catch (error) {
-    console.warn("Gagal mengambil Master Data dari server. Menggunakan data cache offline...", error);
-    masterSiswa = JSON.parse(localStorage.getItem("master_siswa_cache")) || [];
-    masterGuru = JSON.parse(localStorage.getItem("master_guru_cache")) || [];
-    populateDropdowns();
-  }
-}
-
-// 3. Menampilkan Master Data ke Elemen Select / Dropdown Form
-function populateDropdowns() {
-  const selectSiswa = document.getElementById("selectSiswa");
-  const selectGuru = document.getElementById("selectGuru");
-
-  if (selectSiswa && masterSiswa.length > 0) {
-    selectSiswa.innerHTML = '<option value="">-- Pilih Siswa --</option>';
-    masterSiswa.forEach(s => {
-      selectSiswa.innerHTML += `<option value="${s['NAMA']}">${s['NAMA']} (${s['KELAS']})</option>`;
-    });
-  }
-
-  if (selectGuru && masterGuru.length > 0) {
-    selectGuru.innerHTML = '<option value="">-- Pilih Guru --</option>';
-    masterGuru.forEach(g => {
-      selectGuru.innerHTML += `<option value="${g['NAMA']} - ${g['MAPEL']}">${g['NAMA']} - ${g['MAPEL']}</option>`;
-    });
-  }
-}
-
-// 4. Fungsi Simpan Laporan Siswa (Online / Offline Fallback)
-async function simpanLaporanSiswa(dataLaporan) {
-  dataLaporan.tipe = "siswa";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Piket SMK Yanisba</title>
+  <!-- Bootstrap 5 & FontAwesome Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   
-  if (navigator.onLine) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "simpan_laporan_siswa",
-          ...dataLaporan
-        })
-      });
-      const res = await response.json();
-      if (res.status === "success") {
-        alert("Laporan Siswa Berhasil Disimpan!");
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+    }
+
+    .navbar-custom {
+      background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);
+      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
+    }
+
+    .card-custom {
+      background: var(--card-bg);
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    /* Custom Status Badge */
+    .net-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .net-online { background-color: rgba(34, 197, 94, 0.2); color: #15803d; }
+    .net-offline { background-color: rgba(239, 68, 68, 0.2); color: #b91c1c; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-online { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .dot-offline { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+    /* Custom Nav Tabs */
+    .nav-pills .nav-link {
+      color: #64748b;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 10px 16px;
+      transition: all 0.2s ease;
+    }
+    .nav-pills .nav-link.active {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .btn-custom-primary {
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 10px;
+      font-weight: 600;
+      padding: 10px;
+      border: none;
+    }
+    .btn-custom-primary:hover {
+      background-color: var(--primary-hover);
+      color: white;
+    }
+
+    .list-item-card {
+      border-left: 4px solid var(--primary-color);
+      border-radius: 8px;
+      background-color: #f8fafc;
+    }
+    .list-item-card.guru-item {
+      border-left-color: #ef4444;
+    }
+
+    .badge-offline-queue {
+      background-color: #f59e0b;
+      color: white;
+      font-size: 0.8rem;
+      border-radius: 10px;
+      padding: 6px 12px;
+    }
+  </style>
+</head>
+<body class="pb-5">
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-dark navbar-custom sticky-top mb-3">
+    <div class="container" style="max-width: 650px;">
+      <div class="d-flex justify-content-between align-items-center w-100 px-2">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid me-1 fa-clipboard-user text-white fs-4"></i>
+          <div>
+            <h6 class="mb-0 text-white fw-bold" style="letter-spacing: 0.5px;">E-PIKET</h6>
+            <small class="text-white-50" style="font-size: 0.72rem;">SMK YANISBA</small>
+          </div>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2">
+          <span id="netStatusBadge" class="net-badge net-online">
+            <span id="netStatusDot" class="status-dot dot-online"></span>
+            <span id="netStatusText">ONLINE</span>
+          </span>
+          <button class="btn btn-sm btn-light rounded-circle shadow-sm" onclick="syncMasterData()" title="Sinkronkan Master Data">
+            <i class="fa-solid fa-rotate text-primary"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 650px;">
+
+    <!-- INDIKATOR ANTREAN OFFLINE -->
+    <div id="boxAntreanOffline" class="alert alert-warning p-2 mb-3 align-items-center justify-content-between rounded-3 shadow-sm" style="display: none;">
+      <div class="small fw-bold text-dark">
+        <i class="fa-solid fa-cloud-arrow-up me-1"></i> <span id="textJumlahAntrean">0</span> Laporan tersimpan di HP.
+      </div>
+      <button class="btn btn-sm btn-warning text-dark fw-bold py-1 px-2" onclick="uploadAntreanOffline()">
+        Upload Sekarang
+      </button>
+    </div>
+
+    <!-- INFORMASI UTAMA PIKET -->
+    <div class="card card-custom p-3 mb-3">
+      <div class="row g-2">
+        <div class="col-6">
+          <label class="form-label text-secondary small fw-bold mb-1"><i class="fa-regular fa-calendar me-1"></i>Tanggal Piket</label>
+          <input type="date" id="tglPiket" class="form-control form-control-sm" onchange="simpanDrafLokal()">
+        </div>
+        <div class="col-6">
+          <label class="form-label text-secondary small fw-bold mb-1"><i class="fa-regular fa-user me-1"></i>Petugas Piket</label>
+          <input type="text" id="namaPetugas" class="form-control form-control-sm" placeholder="Nama Anda..." oninput="simpanDrafLokal()">
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB PILIHAN (SISWA / GURU) -->
+    <ul class="nav nav-pills nav-justified mb-3 p-1 bg-white rounded-4 shadow-sm" id="pills-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="pills-siswa-tab" data-bs-toggle="pill" data-bs-target="#pills-siswa" type="button" role="tab">
+          <i class="fa-solid fa-graduation-cap me-1"></i> Catat Siswa
+          <span id="badgeCountSiswa" class="badge bg-primary rounded-pill ms-1" style="display:none;">0</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="pills-guru-tab" data-bs-toggle="pill" data-bs-target="#pills-guru" type="button" role="tab">
+          <i class="fa-solid fa-chalkboard-user me-1"></i> Catat Guru
+          <span id="badgeCountGuru" class="badge bg-danger rounded-pill ms-1" style="display:none;">0</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+      
+      <!-- TAB 1: FORM SISWA -->
+      <div class="tab-pane fade show active" id="pills-siswa" role="tabpanel">
+        <div class="card card-custom p-3 mb-3">
+          <h6 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-user-pen me-2"></i>Siswa Bermasalah / Absen</h6>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Cari Nama / Kelas Siswa</label>
+            <input type="text" id="inputSiswa" class="form-control" list="datalistSiswa" placeholder="Ketik nama siswa...">
+            <datalist id="datalistSiswa"></datalist>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted">Jam Ke-</label>
+              <select id="jamSiswa" class="form-select">
+                <option value="Jam ke 1-2">Jam ke 1-2</option>
+                <option value="Jam ke 3-4">Jam ke 3-4</option>
+                <option value="Jam ke 5-6">Jam ke 5-6</option>
+                <option value="Jam ke 7-8">Jam ke 7-8</option>
+                <option value="Seharian">Seharian</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted">Status</label>
+              <select id="statusSiswa" class="form-select">
+                <option value="Alpa (Tanpa Keterangan)">Alpa</option>
+                <option value="Izin">Izin</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Terlambat">Terlambat</option>
+                <option value="Cabut / Membolos">Cabut / Membolos</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-custom-primary w-100" onclick="tambahSiswa()">
+            <i class="fa-solid fa-plus me-1"></i> Tambahkan ke Daftar
+          </button>
+        </div>
+
+        <!-- DAFTAR SEMENTARA SISWA -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0 text-secondary" style="font-size: 0.9rem;">Daftar Siswa Dicatat</h6>
+            <span class="badge bg-light text-dark fw-normal border" id="totalSiswaText">0 Siswa</span>
+          </div>
+          <div id="listSiswaTampil" class="d-flex flex-column gap-2">
+            <small class="text-muted text-center py-3">Belum ada data siswa ditambahkan.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: FORM GURU -->
+      <div class="tab-pane fade" id="pills-guru" role="tabpanel">
+        <div class="card card-custom p-3 mb-3">
+          <h6 class="fw-bold mb-3 text-danger"><i class="fa-solid fa-user-clock me-2"></i>Guru Tidak Hadir / Tugas</h6>
+          
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Cari Nama Guru</label>
+            <input type="text" id="inputGuru" class="form-control" list="datalistGuru" oninput="onGuruSelected()" placeholder="Ketik nama guru...">
+            <datalist id="datalistGuru"></datalist>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Mata Pelajaran</label>
+            <select id="selectMapelGuru" class="form-select">
+              <option value="">-- Pilih Mapel --</option>
+            </select>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted">Jam Ke-</label>
+              <select id="jamGuru" class="form-select">
+                <option value="Jam ke 1-2">Jam ke 1-2</option>
+                <option value="Jam ke 3-4">Jam ke 3-4</option>
+                <option value="Jam ke 5-6">Jam ke 5-6</option>
+                <option value="Jam ke 7-8">Jam ke 7-8</option>
+                <option value="Seharian">Seharian</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted">Jam Masuk (Opsional)</label>
+              <input type="time" id="jamMasukGuru" class="form-control">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Status Kehadiran</label>
+            <select id="statusGuru" class="form-select">
+              <option value="Izin">Izin</option>
+              <option value="Sakit">Sakit</option>
+              <option value="Alpa">Alpa</option>
+              <option value="Terlambat">Terlambat</option>
+              <option value="Tugas Luar">Tugas Luar</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Materi / Tugas yang Ditinggalkan</label>
+            <textarea id="tugasGuru" class="form-control" rows="2" placeholder="Contoh: LKS Halaman 25 Kerjakan Soal 1-10..."></textarea>
+          </div>
+
+          <button type="button" class="btn btn-danger w-100 rounded-3 py-2 fw-bold" onclick="tambahGuru()">
+            <i class="fa-solid fa-plus me-1"></i> Tambahkan ke Daftar
+          </button>
+        </div>
+
+        <!-- DAFTAR SEMENTARA GURU -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0 text-secondary" style="font-size: 0.9rem;">Daftar Guru Dicatat</h6>
+            <span class="badge bg-light text-dark fw-normal border" id="totalGuruText">0 Guru</span>
+          </div>
+          <div id="listGuruTampil" class="d-flex flex-column gap-2">
+            <small class="text-muted text-center py-3">Belum ada data guru ditambahkan.</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TOMBOL AKSI UTAMA -->
+    <div class="card card-custom p-3 shadow-lg border-0 d-flex flex-column gap-2">
+      <button class="btn btn-success btn-lg w-100 rounded-3 py-3 fw-bold text-uppercase shadow-sm" onclick="kirimLaporan(false)">
+        <i class="fa-solid fa-paper-plane me-2"></i> Upload Laporan ke Pusat
+      </button>
+      
+      <button class="btn btn-outline-warning w-100 rounded-3 py-2 fw-bold" onclick="kirimLaporan(true)">
+        <i class="fa-solid fa-floppy-disk me-2"></i> Simpan Catatan Offline (Keliling Kelas)
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMpBA9IvVbsCCjWEssFS2uk7fHP7LtBFMGqjR7WXVX5hG2F_c1qvNtXjzT5pR3Jm-l/exec";
+
+    let masterSiswa = [];
+    let masterGuru = [];
+    let siswaList = [];
+    let guruList = [];
+
+    window.addEventListener('online', () => {
+      updateStatusKoneksi();
+      uploadAntreanOffline();
+    });
+    window.addEventListener('offline', updateStatusKoneksi);
+
+    window.onload = function() {
+      updateStatusKoneksi();
+      document.getElementById('tglPiket').valueAsDate = new Date();
+      
+      const localSiswa = localStorage.getItem('masterSiswa');
+      const localGuru = localStorage.getItem('masterGuru');
+
+      if (localSiswa && localGuru) {
+        masterSiswa = JSON.parse(localSiswa);
+        masterGuru = JSON.parse(localGuru);
+        populateDatalists();
+      } else if (navigator.onLine) {
+        syncMasterData();
+      }
+
+      muatDrafLokal();
+      cekAntreanOffline();
+    };
+
+    function updateStatusKoneksi() {
+      const badge = document.getElementById('netStatusBadge');
+      const dot = document.getElementById('netStatusDot');
+      const text = document.getElementById('netStatusText');
+
+      if (navigator.onLine) {
+        badge.className = "net-badge net-online";
+        dot.className = "status-dot dot-online";
+        text.innerText = "ONLINE";
+      } else {
+        badge.className = "net-badge net-offline";
+        dot.className = "status-dot dot-offline";
+        text.innerText = "OFFLINE";
+      }
+    }
+
+    function syncMasterData() {
+      if (!navigator.onLine) {
+        alert("Anda sedang Offline. Tidak dapat memperbarui Master Data.");
         return;
       }
-    } catch (e) {
-      console.log("Gagal koneksi, menyimpan secara offline...");
-    }
-  }
-  
-  // Jika offline atau fetch gagal
-  saveOffline(dataLaporan);
-  alert("Koneksi tidak stabil. Laporan disimpan di HP secara offline.");
-}
 
-// 5. Fungsi Simpan Laporan Guru (Online / Offline Fallback)
-async function simpanLaporanGuru(dataLaporan) {
-  dataLaporan.tipe = "guru";
-
-  if (navigator.onLine) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "simpan_laporan_guru",
-          ...dataLaporan
+      fetch(`${SCRIPT_URL}?action=get_master`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            masterSiswa = data.siswa;
+            masterGuru = data.guru;
+            localStorage.setItem('masterSiswa', JSON.stringify(masterSiswa));
+            localStorage.setItem('masterGuru', JSON.stringify(masterGuru));
+            populateDatalists();
+            alert('Master Data Berhasil Diperbarui!');
+          }
         })
+        .catch(err => alert('Gagal mengambil Master Data. Cek koneksi internet!'));
+    }
+
+    function populateDatalists() {
+      const dlSiswa = document.getElementById('datalistSiswa');
+      const dlGuru = document.getElementById('datalistGuru');
+      dlSiswa.innerHTML = '';
+      dlGuru.innerHTML = '';
+
+      masterSiswa.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = `${s.nama} (${s.kelas})`;
+        dlSiswa.appendChild(opt);
       });
-      const res = await response.json();
-      if (res.status === "success") {
-        alert("Laporan Guru Berhasil Disimpan!");
+
+      masterGuru.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.nama;
+        dlGuru.appendChild(opt);
+      });
+    }
+
+    function onGuruSelected() {
+      const inputNama = document.getElementById('inputGuru').value.trim();
+      const selectMapel = document.getElementById('selectMapelGuru');
+      selectMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+
+      if (!inputNama) return;
+
+      const guruFound = masterGuru.find(g => g.nama.toLowerCase() === inputNama.toLowerCase());
+
+      if (guruFound && guruFound.mapel) {
+        const listMapel = guruFound.mapel.split(',');
+        listMapel.forEach(mapelText => {
+          const m = mapelText.trim();
+          if (m) {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            selectMapel.appendChild(opt);
+          }
+        });
+
+        if (listMapel.length === 1) {
+          selectMapel.selectedIndex = 1;
+        }
+      }
+    }
+
+    function tambahSiswa() {
+      const nama = document.getElementById('inputSiswa').value.trim();
+      const jam = document.getElementById('jamSiswa').value;
+      const status = document.getElementById('statusSiswa').value;
+
+      if (!nama) { alert('Pilih atau ketik nama siswa terlebih dahulu!'); return; }
+
+      siswaList.push({ nama, jam, status });
+      renderSiswa();
+      simpanDrafLokal();
+      document.getElementById('inputSiswa').value = '';
+    }
+
+    function renderSiswa() {
+      const container = document.getElementById('listSiswaTampil');
+      const countBadge = document.getElementById('badgeCountSiswa');
+      const countText = document.getElementById('totalSiswaText');
+      
+      container.innerHTML = '';
+      countText.innerText = `${siswaList.length} Siswa`;
+
+      if (siswaList.length === 0) {
+        container.innerHTML = '<small class="text-muted text-center py-3">Belum ada data siswa ditambahkan.</small>';
+        countBadge.style.display = 'none';
         return;
       }
-    } catch (e) {
-      console.log("Gagal koneksi, menyimpan secara offline...");
-    }
-  }
 
-  // Jika offline atau fetch gagal
-  saveOffline(dataLaporan);
-  alert("Koneksi tidak stabil. Laporan disimpan di HP secara offline.");
-}
+      countBadge.style.display = 'inline-block';
+      countBadge.innerText = siswaList.length;
 
-// 6. Menyimpan Data ke Storage Offline HP
-function saveOffline(data) {
-  let offlineData = JSON.parse(localStorage.getItem("laporan_offline")) || [];
-  offlineData.push(data);
-  localStorage.setItem("laporan_offline", JSON.stringify(offlineData));
-  updateOfflineUI();
-}
-
-// 7. Update Indikator/Banner "X Laporan tersimpan di HP"
-function updateOfflineUI() {
-  let offlineData = JSON.parse(localStorage.getItem("laporan_offline")) || [];
-  const banner = document.getElementById("offlineBanner");
-  const textInfo = document.getElementById("offlineCountText");
-
-  if (banner) {
-    if (offlineData.length > 0) {
-      banner.style.display = "flex";
-      if (textInfo) textInfo.innerText = `${offlineData.length} Laporan tersimpan di HP.`;
-    } else {
-      banner.style.display = "none";
-    }
-  }
-}
-
-// 8. FUNGSI UTAMA: Upload Semua Data Offline Sekaligus (Fix Bug Hanya 1 Data)
-async function uploadDataOffline() {
-  let offlineData = JSON.parse(localStorage.getItem("laporan_offline")) || [];
-
-  if (offlineData.length === 0) {
-    alert("Tidak ada data offline untuk diupload.");
-    return;
-  }
-
-  // Memisahkan data siswa dan guru
-  let listSiswa = offlineData.filter(item => item.tipe === "siswa");
-  let listGuru = offlineData.filter(item => item.tipe === "guru");
-
-  try {
-    // Send Batch Siswa
-    if (listSiswa.length > 0) {
-      const resSiswa = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "simpan_batch_siswa",
-          items: listSiswa
-        })
+      siswaList.forEach((s, idx) => {
+        container.innerHTML += `
+          <div class="list-item-card p-2 px-3 d-flex justify-content-between align-items-center shadow-sm">
+            <div>
+              <div class="fw-bold text-dark small">${s.nama}</div>
+              <div class="text-muted" style="font-size: 0.78rem;">${s.jam} • <span class="badge bg-warning text-dark py-1">${s.status}</span></div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="hapusSiswa(${idx})">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>`;
       });
-      const resultSiswa = await resSiswa.json();
-      if (resultSiswa.status !== "success") throw new Error(resultSiswa.message);
     }
 
-    // Send Batch Guru
-    if (listGuru.length > 0) {
-      const resGuru = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "simpan_batch_guru",
-          items: listGuru
-        })
+    function hapusSiswa(idx) {
+      siswaList.splice(idx, 1);
+      renderSiswa();
+      simpanDrafLokal();
+    }
+
+    function tambahGuru() {
+      const namaGuru = document.getElementById('inputGuru').value.trim();
+      const mapelGuru = document.getElementById('selectMapelGuru').value;
+      const jamKe = document.getElementById('jamGuru').value;
+      const jamMasuk = document.getElementById('jamMasukGuru').value;
+      const status = document.getElementById('statusGuru').value;
+      const tugas = document.getElementById('tugasGuru').value;
+
+      if (!namaGuru) { alert('Ketik atau pilih nama guru terlebih dahulu!'); return; }
+
+      let namaTampil = mapelGuru ? `${namaGuru} - ${mapelGuru}` : namaGuru;
+
+      guruList.push({
+        nama: namaTampil,
+        jam: jamKe,
+        waktuMasuk: jamMasuk || '-',
+        status: status,
+        tugas: tugas || '-'
       });
-      const resultGuru = await resGuru.json();
-      if (resultGuru.status !== "success") throw new Error(resultGuru.message);
+
+      renderGuru();
+      simpanDrafLokal();
+
+      document.getElementById('inputGuru').value = '';
+      document.getElementById('selectMapelGuru').innerHTML = '<option value="">-- Pilih Mapel --</option>';
+      document.getElementById('tugasGuru').value = '';
+      document.getElementById('jamMasukGuru').value = '';
     }
 
-    alert(`Berhasil mengunggah ${offlineData.length} laporan ke Google Spreadsheet!`);
-    
-    // Hapus penyimpanan lokal HANYA jika semua berhasil terunggah
-    localStorage.removeItem("laporan_offline");
-    updateOfflineUI();
+    function renderGuru() {
+      const container = document.getElementById('listGuruTampil');
+      const countBadge = document.getElementById('badgeCountGuru');
+      const countText = document.getElementById('totalGuruText');
 
-  } catch (error) {
-    console.error("Gagal melakukan batch upload:", error);
-    alert("Gagal mengupload data. Pastikan koneksi internet stabil lalu coba lagi.");
-  }
-}
+      container.innerHTML = '';
+      countText.innerText = `${guruList.length} Guru`;
+
+      if (guruList.length === 0) {
+        container.innerHTML = '<small class="text-muted text-center py-3">Belum ada data guru ditambahkan.</small>';
+        countBadge.style.display = 'none';
+        return;
+      }
+
+      countBadge.style.display = 'inline-block';
+      countBadge.innerText = guruList.length;
+
+      guruList.forEach((g, idx) => {
+        container.innerHTML += `
+          <div class="list-item-card guru-item p-2 px-3 d-flex justify-content-between align-items-center shadow-sm">
+            <div>
+              <div class="fw-bold text-dark small">${g.nama}</div>
+              <div class="text-muted mb-1" style="font-size: 0.78rem;">${g.jam} | Masuk: ${g.waktuMasuk} • <span class="badge bg-danger py-1">${g.status}</span></div>
+              <div class="text-secondary fst-italic" style="font-size: 0.75rem;">Tugas: ${g.tugas}</div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="hapusGuru(${idx})">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>`;
+      });
+    }
+
+    function hapusGuru(idx) {
+      guruList.splice(idx, 1);
+      renderGuru();
+      simpanDrafLokal();
+    }
+
+    // MANAJEMEN DRAF & OFFLINE
+    function simpanDrafLokal() {
+      const draf = {
+        tanggal: document.getElementById('tglPiket').value,
+        petugas: document.getElementById('namaPetugas').value,
+        siswaList: siswaList,
+        guruList: guruList
+      };
+      localStorage.setItem('drafPiket', JSON.stringify(draf));
+    }
+
+    function muatDrafLokal() {
+      const drafRaw = localStorage.getItem('drafPiket');
+      if (drafRaw) {
+        const draf = JSON.parse(drafRaw);
+        if (draf.tanggal) document.getElementById('tglPiket').value = draf.tanggal;
+        if (draf.petugas) document.getElementById('namaPetugas').value = draf.petugas;
+        siswaList = draf.siswaList || [];
+        guruList = draf.guruList || [];
+        renderSiswa();
+        renderGuru();
+      }
+    }
+
+    function bersihkanDrafLokal() {
+      localStorage.removeItem('drafPiket');
+      siswaList = [];
+      guruList = [];
+      renderSiswa();
+      renderGuru();
+    }
+
+    // PENGIRIMAN DATA KE GOOGLE APPS SCRIPT
+    function kirimLaporan(paksaOffline = false) {
+      const tglRaw = document.getElementById('tglPiket').value;
+      const petugas = document.getElementById('namaPetugas').value.trim();
+
+      if (!petugas) { alert('Silakan isi Nama Petugas Piket terlebih dahulu!'); return; }
+      if (siswaList.length === 0 && guruList.length === 0) {
+        alert('Belum ada data Siswa maupun Guru yang ditambahkan!');
+        return;
+      }
+
+      const parts = tglRaw.split('-');
+      const tglFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+      const payload = {
+        tanggal: tglFormatted,
+        petugas: petugas,
+        siswaList: siswaList,
+        guruList: guruList
+      };
+
+      // Simpan Ke Antrean Offline jika HP sedang offline atau ditekan tombol Offline
+      if (paksaOffline || !navigator.onLine) {
+        masukkanKeAntreanOffline(payload);
+        alert(' Catatan Laporan Berhasil Disimpan di Memori HP!\n\nLaporan ini akan otomatis diunggah begitu HP Anda terhubung ke internet.');
+        bersihkanDrafLokal();
+        return;
+      }
+
+      if (!confirm('Apakah Anda yakin ingin mengirim laporan harian ini ke Pusat?')) return;
+
+      // Kirim via Form Data untuk menghindari Masalah CORS Google Apps Script
+      sendDataToAppsScript(payload)
+        .then(() => {
+          alert(' Laporan Berhasil Dikirim ke Spreadsheet Pusat!');
+          bersihkanDrafLokal();
+        })
+        .catch(() => {
+          masukkanKeAntreanOffline(payload);
+          alert('Gagal mengirim karena jaringan lambat. Laporan Anda otomatis diamankan ke Penyimpanan Offline HP!');
+          bersihkanDrafLokal();
+        });
+    }
+
+    function sendDataToAppsScript(dataObj) {
+      return fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Solusi Ampuh Mengatasi CORS Error Google Apps Script
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj)
+      });
+    }
+
+    // MANAJEMEN ANTREAN LAPORAN OFFLINE
+    function masukkanKeAntreanOffline(payload) {
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      antrean.push(payload);
+      localStorage.setItem('antreanOfflinePiket', JSON.stringify(antrean));
+      cekAntreanOffline();
+    }
+
+    function cekAntreanOffline() {
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      const box = document.getElementById('boxAntreanOffline');
+      const text = document.getElementById('textJumlahAntrean');
+
+      if (antrean.length > 0) {
+        box.classList.remove('d-none');
+        box.classList.add('d-flex');
+        text.innerText = antrean.length;
+      } else {
+        box.classList.remove('d-flex');
+        box.classList.add('d-none');
+      }
+    }
+
+    async function uploadAntreanOffline() {
+      if (!navigator.onLine) {
+        alert('HP Anda masih OFFLINE. Hubungkan internet untuk mengunggah.');
+        return;
+      }
+
+      let antrean = JSON.parse(localStorage.getItem('antreanOfflinePiket')) || [];
+      if (antrean.length === 0) return;
+
+      if (!confirm(`Ada ${antrean.length} laporan tersimpan di HP. Upload sekarang ke Spreadsheet Pusat?`)) return;
+
+      let suksesCount = 0;
+      for (let i = 0; i < antrean.length; i++) {
+        try {
+          await sendDataToAppsScript(antrean[i]);
+          suksesCount++;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      localStorage.removeItem('antreanOfflinePiket');
+      cekAntreanOffline();
+      alert(`Berhasil mengunggah ${suksesCount} Laporan Offline ke Pusat!`);
+    }
+  </script>
+</body>
+</html>
