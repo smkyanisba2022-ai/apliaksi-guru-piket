@@ -67,16 +67,15 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Guru
       </h2>
 
-      <!-- Cari & Pilih Nama Guru -->
+      <!-- Select Nama Guru -->
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Cari / Pilih Nama Guru <span class="text-rose-500">*</span></label>
-        <input type="text" id="searchGuru" oninput="filterGuruList()" placeholder="🔍 Ketik nama guru untuk memfilter..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs mb-1 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Guru <span class="text-rose-500">*</span></label>
         <select id="selectGuru" onchange="onGuruSelectChanged()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
           <option value="">-- Memuat Data Guru... --</option>
         </select>
       </div>
 
-      <!-- Mapel Guru -->
+      <!-- Select Mata Pelajaran (Berdiri Sendiri) -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
         <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -143,10 +142,9 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Siswa
       </h2>
 
-      <!-- Cari & Pilih Nama Siswa -->
+      <!-- Select Nama Siswa dan Kelas -->
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Cari / Pilih Nama Siswa <span class="text-rose-500">*</span></label>
-        <input type="text" id="searchSiswa" oninput="filterSiswaList()" placeholder="🔍 Ketik nama siswa untuk memfilter..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs mb-1 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Siswa & Kelas <span class="text-rose-500">*</span></label>
         <select id="selectSiswa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
           <option value="">-- Memuat Data Siswa... --</option>
         </select>
