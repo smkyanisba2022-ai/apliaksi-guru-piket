@@ -70,24 +70,24 @@
       <!-- Select Nama Guru -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Guru <span class="text-rose-500">*</span></label>
-        <select id="selectGuru" onchange="onGuruSelectChanged()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="selectGuru" onchange="onGuruSelectChanged()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Memuat Data Guru... --</option>
         </select>
       </div>
 
-      <!-- Select Mata Pelajaran (Berdiri Sendiri) -->
+      <!-- Select Mata Pelajaran -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
-        <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Pilih Guru Terlebih Dahulu --</option>
         </select>
       </div>
 
-      <!-- Jam Ke (1-9) -->
+      <!-- Jam Ke & Jam Masuk -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
-          <select id="guruJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <select id="guruJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="">-- Pilih --</option>
             <option value="Jam ke 1">Jam ke 1</option>
             <option value="Jam ke 2">Jam ke 2</option>
@@ -109,7 +109,7 @@
       <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Keterangan <span class="text-rose-500">*</span></label>
-        <select id="guruStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="guruStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Pilih Status --</option>
           <option value="Izin">Izin</option>
           <option value="Sakit">Sakit</option>
@@ -145,15 +145,15 @@
       <!-- Select Nama Siswa dan Kelas -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Nama Siswa & Kelas <span class="text-rose-500">*</span></label>
-        <select id="selectSiswa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="selectSiswa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Memuat Data Siswa... --</option>
         </select>
       </div>
 
-      <!-- Jam Ke (1-9) -->
+      <!-- Jam Ke -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
-        <select id="siswaJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="siswaJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Pilih --</option>
           <option value="Jam ke 1">Jam ke 1</option>
           <option value="Jam ke 2">Jam ke 2</option>
@@ -170,7 +170,7 @@
       <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Alasan <span class="text-rose-500">*</span></label>
-        <select id="siswaStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+        <select id="siswaStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">-- Pilih Keterangan --</option>
           <option value="Izin Pulang (Sakit)">Izin Pulang (Sakit)</option>
           <option value="Izin Meninggalkan Sekolah">Izin Meninggalkan Sekolah</option>
