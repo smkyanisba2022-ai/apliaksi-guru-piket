@@ -1,5 +1,5 @@
-// GANTI DENGAN URL WEB APP APPS SCRIPT ANDA
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6mmFWP_ZFGLlrosb4RrVtIFugvRAdA6_8ydbOyarGOlTsySGoRh_YpJkAA8AQ_x-L/exec";
+// PASANG URL WEB APP APPS SCRIPT ANDA DI SINI
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjt8QdoMyrqDrYnUmx-P_s-JcS3fLAiaE2RoP4cbvvLmJFvNINPjVND1h1AQzO57KR/exec";
 
 let masterSiswa = [];
 let masterGuru = [];
@@ -37,14 +37,136 @@ function checkOnlineStatus() {
   }
 }
 
-// 1. FUNGSI SEMBUNYIKAN / TAMPILKAN
+// 1. FUNGSI PERPINDAHAN TAB (GURU, SISWA, PANTAU)
+window.switchTab = function(tab) {
+  const formG = document.getElementById("formGuru");
+  const formS = document.getElementById("formSiswa");
+  const secP = document.getElementById("sectionPantau");
+
+  const btnG = document.getElementById("tabBtnGuru");
+  const btnS = document.getElementById("tabBtnSiswa");
+  const btnP = document.getElementById("tabBtnPantau");
+
+  // Sembunyikan semua tab
+  formG.classList.add("hidden");
+  formS.classList.add("hidden");
+  secP.classList.add("hidden");
+
+  // Reset warna tombol
+  btnG.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+  btnS.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+  btnP.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+
+  if (tab === 'guru') {
+    formG.classList.remove("hidden");
+    btnG.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
+  } else if (tab === 'siswa') {
+    formS.classList.remove("hidden");
+    btnS.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
+  } else if (tab === 'pantau') {
+    secP.classList.remove("hidden");
+    btnP.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
+    loadDataPantau(); // Ambil data saat tab pantau diklik
+  }
+};
+
+// 2. FUNGSI UNTUK MEMUAT DATA MONITORING UNTUK KEPALA SEKOLAH
+window.loadDataPantau = async function() {
+  const container = document.getElementById("tabelLaporanContainer");
+  if (!container) return;
+
+  container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-spinner animate-spin"></i> Memuat data laporan terbaru...</p>`;
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=get_laporan`);
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      let html = "";
+
+      // --- TABEL LAPORAN GURU ---
+      html += `<div class="border rounded-lg p-3 bg-slate-50">
+        <h3 class="font-bold text-xs text-slate-700 mb-2 flex justify-between items-center">
+          <span><i class="fa-solid fa-chalkboard-user text-indigo-600 mr-1"></i> Rekap Laporan Guru</span>
+          <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">${data.guru.length > 1 ? data.guru.length - 1 : 0} Catatan</span>
+        </h3>`;
+
+      if (data.guru && data.guru.length > 1) {
+        html += `<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-[11px]">
+          <thead>
+            <tr class="bg-slate-200 text-slate-700">
+              <th class="p-1.5 border">Tanggal/Waktu</th>
+              <th class="p-1.5 border">Guru & Mapel</th>
+              <th class="p-1.5 border">Status</th>
+              <th class="p-1.5 border">Tugas/Materi</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white">`;
+
+        // Tampilkan dari data yang paling baru dimasukkan (Urutan terbalik)
+        for (let i = data.guru.length - 1; i >= 1; i--) {
+          const row = data.guru[i];
+          html += `<tr class="border-b hover:bg-slate-50">
+            <td class="p-1.5 text-slate-500 border whitespace-nowrap">${row[0] || '-'}</td>
+            <td class="p-1.5 font-semibold text-slate-800 border">${row[2] || '-'}</td>
+            <td class="p-1.5 border"><span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-bold">${row[5] || '-'}</span></td>
+            <td class="p-1.5 text-slate-600 border">${row[6] || '-'}</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      } else {
+        html += `<p class="text-[11px] text-slate-400 italic">Belum ada laporan guru yang masuk.</p>`;
+      }
+      html += `</div>`;
+
+      // --- TABEL LAPORAN SISWA ---
+      html += `<div class="border rounded-lg p-3 bg-slate-50">
+        <h3 class="font-bold text-xs text-slate-700 mb-2 flex justify-between items-center">
+          <span><i class="fa-solid fa-user-graduate text-indigo-600 mr-1"></i> Rekap Laporan Siswa</span>
+          <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">${data.siswa.length > 1 ? data.siswa.length - 1 : 0} Catatan</span>
+        </h3>`;
+
+      if (data.siswa && data.siswa.length > 1) {
+        html += `<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-[11px]">
+          <thead>
+            <tr class="bg-slate-200 text-slate-700">
+              <th class="p-1.5 border">Tanggal/Waktu</th>
+              <th class="p-1.5 border">Siswa & Kelas</th>
+              <th class="p-1.5 border">Jam Ke</th>
+              <th class="p-1.5 border">Keterangan</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white">`;
+
+        for (let i = data.siswa.length - 1; i >= 1; i--) {
+          const row = data.siswa[i];
+          html += `<tr class="border-b hover:bg-slate-50">
+            <td class="p-1.5 text-slate-500 border whitespace-nowrap">${row[0] || '-'}</td>
+            <td class="p-1.5 font-semibold text-slate-800 border">${row[2] || '-'}</td>
+            <td class="p-1.5 text-slate-600 border">${row[3] || '-'}</td>
+            <td class="p-1.5 border"><span class="px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded font-bold">${row[4] || '-'}</span></td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      } else {
+        html += `<p class="text-[11px] text-slate-400 italic">Belum ada laporan siswa yang masuk.</p>`;
+      }
+      html += `</div>`;
+
+      container.innerHTML = html;
+    }
+  } catch (err) {
+    container.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">Gagal mengambil data laporan. Pastikan koneksi terhubung.</p>`;
+  }
+};
+
+// --- FUNGSI OFFLINE & KONTROL ITEM (DARI PANDUAN SEBELUMNYA) ---
 window.toggleOfflineVisibility = function() {
   const wrapper = document.getElementById("offlineContentWrapper");
   const txt = document.getElementById("txtToggleList");
   const icon = document.getElementById("iconToggleList");
 
   if (!wrapper || !txt || !icon) return;
-
   isOfflineListMinimized = !isOfflineListMinimized;
 
   if (isOfflineListMinimized) {
@@ -58,49 +180,21 @@ window.toggleOfflineVisibility = function() {
   }
 };
 
-// 2. FUNGSI HAPUS SELEKTIF (PER ITEM CATATAN)
 window.deleteSingleOfflineItem = function(index) {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
-  
   if (index >= 0 && index < list.length) {
-    // Hapus 1 item spesifik berdasarkan indeksnya
     list.splice(index, 1);
-    
-    // Simpan kembali ke LocalStorage
     localStorage.setItem("offline_queue", JSON.stringify(list));
-    
-    // Render ulang tampilan daftar
     renderOfflineList();
   }
 };
 
-// 3. FUNGSI HAPUS SEMUANYA
 window.clearAllOfflineData = function() {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
   if (list.length === 0) return;
-
-  if (confirm(`Yakin ingin menghapus SELURUH ${list.length} catatan offline dari HP?`)) {
+  if (confirm(`Yakin ingin menghapus SELURUH ${list.length} catatan offline?`)) {
     localStorage.removeItem("offline_queue");
     renderOfflineList();
-  }
-};
-
-window.switchTab = function(tab) {
-  const formG = document.getElementById("formGuru");
-  const formS = document.getElementById("formSiswa");
-  const btnG = document.getElementById("tabBtnGuru");
-  const btnS = document.getElementById("tabBtnSiswa");
-
-  if (tab === 'guru') {
-    formG.classList.remove("hidden");
-    formS.classList.add("hidden");
-    btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
-    btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
-  } else {
-    formS.classList.remove("hidden");
-    formG.classList.add("hidden");
-    btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
-    btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
   }
 };
 
@@ -114,11 +208,8 @@ async function loadMasterData() {
       localStorage.setItem("cache_siswa", JSON.stringify(masterSiswa));
       localStorage.setItem("cache_guru", JSON.stringify(masterGuru));
       renderDropdowns();
-    } else {
-      throw new Error(data.message);
     }
   } catch (err) {
-    console.warn("Memuat dari penyimpanan lokal (Offline)...", err);
     masterSiswa = JSON.parse(localStorage.getItem("cache_siswa")) || [];
     masterGuru = JSON.parse(localStorage.getItem("cache_guru")) || [];
     renderDropdowns();
@@ -131,9 +222,7 @@ function renderDropdowns() {
     let htmlGuru = '<option value="">-- Pilih Nama Guru --</option>';
     masterGuru.forEach(g => {
       let nama = g.NAMA || g.Nama || g.nama;
-      if (nama) {
-        htmlGuru += `<option value="${nama}">${nama}</option>`;
-      }
+      if (nama) htmlGuru += `<option value="${nama}">${nama}</option>`;
     });
     selectGuru.innerHTML = htmlGuru;
   }
@@ -162,19 +251,13 @@ window.onGuruSelectChanged = function() {
     return;
   }
 
-  const guruObj = masterGuru.find(g => {
-    let n = g.NAMA || g.Nama || g.nama;
-    return n === selectedNama;
-  });
-
+  const guruObj = masterGuru.find(g => (g.NAMA || g.Nama || g.nama) === selectedNama);
   if (guruObj) {
     let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
     if (mapelStr) {
       let listMapel = mapelStr.toString().split(',').map(m => m.trim()).filter(m => m !== '');
       let html = '<option value="">-- Pilih Mapel --</option>';
-      listMapel.forEach(m => {
-        html += `<option value="${m}">${m}</option>`;
-      });
+      listMapel.forEach(m => { html += `<option value="${m}">${m}</option>`; });
       selectMapel.innerHTML = html;
     } else {
       selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
@@ -193,10 +276,10 @@ function getGuruPayload() {
   const jamKe = document.getElementById("guruJamKe").value;
   const status = document.getElementById("guruStatus").value;
 
-  if (!namaGuru) { alert("Pilih Nama Guru terlebih dahulu!"); return null; }
-  if (!mapel) { alert("Pilih Mata Pelajaran!"); return null; }
-  if (!jamKe) { alert("Pilih Jam Ke-!"); return null; }
-  if (!status) { alert("Pilih Status / Keterangan!"); return null; }
+  if (!namaGuru || !mapel || !jamKe || !status) {
+    alert("Lengkapi seluruh kolom guru!");
+    return null;
+  }
 
   return {
     tipe: "guru",
@@ -218,9 +301,10 @@ function getSiswaPayload() {
   const jamKe = document.getElementById("siswaJamKe").value;
   const status = document.getElementById("siswaStatus").value;
 
-  if (!namaSiswa) { alert("Pilih Nama Siswa terlebih dahulu!"); return null; }
-  if (!jamKe) { alert("Pilih Jam Ke-!"); return null; }
-  if (!status) { alert("Pilih Status / Keterangan!"); return null; }
+  if (!namaSiswa || !jamKe || !status) {
+    alert("Lengkapi seluruh kolom siswa!");
+    return null;
+  }
 
   return {
     tipe: "siswa",
@@ -278,12 +362,12 @@ async function sendData(payload, action) {
       alert("Laporan berhasil terkirim ke Google Spreadsheet!");
       return;
     } catch (e) {
-      console.warn("Pengiriman online mengalami kendala...", e);
+      console.warn("Error pengiriman...", e);
     }
   }
 
   saveToLocalStorage(payload);
-  alert("Koneksi bermasalah / Offline. Data berhasil tersimpan di HP!");
+  alert("Offline! Data tersimpan sementara di HP.");
 }
 
 function saveToLocalStorage(item) {
@@ -293,7 +377,6 @@ function saveToLocalStorage(item) {
   renderOfflineList();
 }
 
-// FUNGSI RENDER TAMPILAN LIST CATATAN OFFLINE
 function renderOfflineList() {
   const banner = document.getElementById("offlineBanner");
   const textCount = document.getElementById("offlineCountText");
@@ -312,7 +395,7 @@ function renderOfflineList() {
         let ket = item.tipe === "guru" ? `${item.status} (${item.jam_ke})` : `${item.status_keterangan} (${item.jam_ke})`;
         
         html += `
-          <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between items-center shadow-sm hover:border-amber-400 transition-all">
+          <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between items-center shadow-sm">
             <div class="overflow-hidden pr-2">
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="font-bold text-indigo-700 uppercase text-[9px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
@@ -320,9 +403,7 @@ function renderOfflineList() {
               </div>
               <p class="text-[11px] text-slate-500">${ket}</p>
             </div>
-            
-            <!-- Tombol Hapus Selektif Per Item Catatan -->
-            <button type="button" onclick="deleteSingleOfflineItem(${idx})" title="Hapus catatan ini saja" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md border border-rose-200 transition-all cursor-pointer shrink-0">
+            <button type="button" onclick="deleteSingleOfflineItem(${idx})" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md border border-rose-200 transition-all cursor-pointer shrink-0">
               <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
           </div>
@@ -335,14 +416,9 @@ function renderOfflineList() {
   }
 }
 
-// Upload Batch Offline
 window.uploadDataOffline = async function() {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
-
-  if (list.length === 0) {
-    alert("Tidak ada catatan offline yang tersimpan.");
-    return;
-  }
+  if (list.length === 0) return;
 
   const btn = document.getElementById("btnUploadBatch");
   if (btn) {
@@ -355,10 +431,7 @@ window.uploadDataOffline = async function() {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "simpan_batch",
-        items: list
-      })
+      body: JSON.stringify({ action: "simpan_batch", items: list })
     });
 
     alert(`Berhasil mengunggah ${list.length} catatan ke Google Spreadsheet!`);
@@ -366,7 +439,6 @@ window.uploadDataOffline = async function() {
     renderOfflineList();
   } catch (err) {
     alert("Gagal mengunggah. Pastikan koneksi internet aktif!");
-    console.error(err);
   } finally {
     if (btn) {
       btn.disabled = false;
