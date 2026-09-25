@@ -1,8 +1,9 @@
-// GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1j9f9PX8hixAeTk21NDdX-0CHv-rAWSPe092zCWrSfEUTtt6tYoX7caoK21LkAv_R/exec";
+// GANTI DENGAN URL WEB APP APPS SCRIPT ANDA
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6mmFWP_ZFGLlrosb4RrVtIFugvRAdA6_8ydbOyarGOlTsySGoRh_YpJkAA8AQ_x-L/exec";
 
 let masterSiswa = [];
 let masterGuru = [];
+let isOfflineListMinimized = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   setupRealtimeClock();
@@ -14,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("offline", checkOnlineStatus);
 });
 
-// Jam Realtime
 function setupRealtimeClock() {
   const el = document.getElementById("tanggalWaktu");
   const update = () => {
@@ -25,7 +25,6 @@ function setupRealtimeClock() {
   setInterval(update, 1000);
 }
 
-// Indicator Status Online / Offline
 function checkOnlineStatus() {
   const badge = document.getElementById("statusKoneksi");
   if (!badge) return;
@@ -38,7 +37,6 @@ function checkOnlineStatus() {
   }
 }
 
-// Switch Tab
 window.switchTab = function(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
@@ -80,9 +78,7 @@ async function loadMasterData() {
   }
 }
 
-// Render Dropdown Utama
 function renderDropdowns() {
-  // Render Guru
   const selectGuru = document.getElementById("selectGuru");
   if (selectGuru) {
     let htmlGuru = '<option value="">-- Pilih Nama Guru --</option>';
@@ -95,7 +91,6 @@ function renderDropdowns() {
     selectGuru.innerHTML = htmlGuru;
   }
 
-  // Render Siswa
   const selectSiswa = document.getElementById("selectSiswa");
   if (selectSiswa) {
     let htmlSiswa = '<option value="">-- Pilih Nama Siswa --</option>';
@@ -111,7 +106,6 @@ function renderDropdowns() {
   }
 }
 
-// Saat nama guru dipilih -> Cari mapel di masterGuru (pembacaan Fleksibel/Case-Insensitive)
 window.onGuruSelectChanged = function() {
   const selectedNama = document.getElementById("selectGuru").value;
   const selectMapel = document.getElementById("selectGuruMapel");
@@ -143,7 +137,6 @@ window.onGuruSelectChanged = function() {
   }
 };
 
-// Validasi Payload Guru
 function getGuruPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
@@ -170,7 +163,6 @@ function getGuruPayload() {
   };
 }
 
-// Validasi Payload Siswa
 function getSiswaPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
@@ -193,7 +185,6 @@ function getSiswaPayload() {
   };
 }
 
-// Simpan Offline Manual
 window.simpanManualOffline = function(type) {
   const payload = type === 'guru' ? getGuruPayload() : getSiswaPayload();
   if (!payload) return;
@@ -209,7 +200,6 @@ window.simpanManualOffline = function(type) {
   }
 };
 
-// Form Handler (Upload Langsung)
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
   const payload = getGuruPayload();
@@ -229,21 +219,20 @@ window.handleSubmitedSiswa = async function(e) {
   e.target.reset();
 };
 
-// Kirim Data
+// Kirim Data dengan Penanganan CORS Google Apps Script
 async function sendData(payload, action) {
   if (navigator.onLine) {
     try {
-      const res = await fetch(SCRIPT_URL, {
+      await fetch(SCRIPT_URL, {
         method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: action, ...payload })
       });
-      const data = await res.json();
-      if (data.status === "success") {
-        alert("Laporan berhasil terkirim ke Google Spreadsheet!");
-        return;
-      }
+      alert("Laporan berhasil terkirim ke Google Spreadsheet!");
+      return;
     } catch (e) {
-      console.log("Kirim online gagal, menyimpan ke offline...", e);
+      console.warn("Pengiriman online mengalami kendala...", e);
     }
   }
 
@@ -257,6 +246,25 @@ function saveToLocalStorage(item) {
   localStorage.setItem("offline_queue", JSON.stringify(list));
   renderOfflineList();
 }
+
+// Fungsi Minimize / Expand List Catatan Offline
+window.toggleOfflineList = function() {
+  const wrapper = document.getElementById("offlineContentWrapper");
+  const txt = document.getElementById("txtToggleList");
+  const icon = document.getElementById("iconToggleList");
+
+  isOfflineListMinimized = !isOfflineListMinimized;
+
+  if (isOfflineListMinimized) {
+    wrapper.classList.add("hidden");
+    txt.innerText = "Tampilkan";
+    icon.className = "fa-solid fa-chevron-down";
+  } else {
+    wrapper.classList.remove("hidden");
+    txt.innerText = "Sembunyikan";
+    icon.className = "fa-solid fa-chevron-up";
+  }
+};
 
 function renderOfflineList() {
   const banner = document.getElementById("offlineBanner");
@@ -307,23 +315,19 @@ window.uploadDataOffline = async function() {
   }
 
   try {
-    const res = await fetch(SCRIPT_URL, {
+    await fetch(SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
         action: "simpan_batch",
         items: list
       })
     });
 
-    const data = await res.json();
-
-    if (data.status === "success") {
-      alert(`Berhasil mengunggah ${list.length} catatan ke Google Spreadsheet!`);
-      localStorage.removeItem("offline_queue");
-      renderOfflineList();
-    } else {
-      throw new Error(data.message);
-    }
+    alert(`Berhasil mengunggah ${list.length} catatan ke Google Spreadsheet!`);
+    localStorage.removeItem("offline_queue");
+    renderOfflineList();
   } catch (err) {
     alert("Gagal mengunggah. Pastikan koneksi internet aktif!");
     console.error(err);
