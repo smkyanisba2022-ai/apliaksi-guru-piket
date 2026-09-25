@@ -9,7 +9,7 @@
   <style>
     body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     .card { border-radius: 12px; border: none; }
-    .btn-primary { background-color: #0d6efd; }
+    .status-badge { font-size: 0.85rem; padding: 5px 10px; border-radius: 20px; }
     .badge-delete { cursor: pointer; }
   </style>
 </head>
@@ -18,7 +18,10 @@
   <nav class="navbar navbar-dark bg-dark mb-3">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1">E-PIKET SMK YANISBA</span>
-      <button class="btn btn-outline-light btn-sm" onclick="syncMasterData()">🔄 Sync Master</button>
+      <div>
+        <span id="statusJaringan" class="badge status-badge bg-secondary me-2">Memeriksa...</span>
+        <button class="btn btn-outline-light btn-sm" onclick="syncMasterData()">🔄 Sync Master</button>
+      </div>
     </div>
   </nav>
 
@@ -28,11 +31,11 @@
     <div class="card p-3 mb-3 shadow-sm">
       <div class="mb-2">
         <label class="form-label fw-bold">Tanggal Piket:</label>
-        <input type="date" id="tglPiket" class="form-control">
+        <input type="date" id="tglPiket" class="form-control" onchange="simpanDrafLokal()">
       </div>
       <div>
         <label class="form-label fw-bold">Nama Petugas Piket:</label>
-        <input type="text" id="namaPetugas" class="form-control" placeholder="Ketik nama Anda...">
+        <input type="text" id="namaPetugas" class="form-control" placeholder="Ketik nama Anda..." oninput="simpanDrafLokal()">
       </div>
     </div>
 
@@ -50,14 +53,10 @@
         <div class="col-6 mb-2">
           <label class="form-label">Jam Ke-:</label>
           <select id="jamSiswa" class="form-control">
-            <option value="Jam ke 1">Jam ke 1</option>
-            <option value="Jam ke 2">Jam ke 2</option>
-            <option value="Jam ke 3">Jam ke 3</option>
-            <option value="Jam ke 4">Jam ke 4</option>
-            <option value="Jam ke 5">Jam ke 5</option>
-            <option value="Jam ke 6">Jam ke 6</option>
-            <option value="Jam ke 7">Jam ke 7</option>
-            <option value="Jam ke 8">Jam ke 8</option>
+            <option value="Jam ke 1-2">Jam ke 1-2</option>
+            <option value="Jam ke 3-4">Jam ke 3-4</option>
+            <option value="Jam ke 5-6">Jam ke 5-6</option>
+            <option value="Jam ke 7-8">Jam ke 7-8</option>
             <option value="Seharian">Seharian</option>
           </select>
         </div>
@@ -67,7 +66,6 @@
             <option value="Alpa (Tanpa Keterangan)">Alpa (Tanpa Keterangan)</option>
             <option value="Izin">Izin</option>
             <option value="Sakit">Sakit</option>
-            <option value="Bolos">Bolos</option>
             <option value="Terlambat">Terlambat</option>
             <option value="Cabut / Membolos">Cabut / Membolos</option>
           </select>
@@ -139,24 +137,27 @@
     </div>
 
     <!-- TOMBOL SUBMIT LAPORAN -->
-    <button class="btn btn-success btn-lg w-100 shadow" onclick="kirimLaporan()">🚀 UPLOAD LAPORAN KE PUSAT</button>
+    <button class="btn btn-success btn-lg w-100 shadow mb-3" onclick="kirimLaporan()">🚀 UPLOAD LAPORAN KE PUSAT</button>
 
   </div>
 
   <script>
-    // URL Web App Google Apps Script Anda
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxR_LxFxTgDvxF_f3ahzFxCsvsLkhDKvnMXhpYtHks6tOVCHxxtx-q3NsqmluRYIhK2/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxR_LxFxTgDvxF_f3ahzFxCsvsLkhDKvnMXhpYThks6tOVCHxxtx-q3NsqmluRYIhK2/exec";
 
     let masterSiswa = [];
     let masterGuru = [];
     let siswaList = [];
     let guruList = [];
 
-    // Set Default Tanggal Hari Ini
-    document.getElementById('tglPiket').valueAsDate = new Date();
+    // Inisialisasi & Cek Status Online/Offline
+    window.addEventListener('online', updateStatusKoneksi);
+    window.addEventListener('offline', updateStatusKoneksi);
 
-    // Auto-load Master Data saat halaman dibuka
     window.onload = function() {
+      updateStatusKoneksi();
+      document.getElementById('tglPiket').valueAsDate = new Date();
+      
+      // Muat Master Data dari LocalStorage
       const localSiswa = localStorage.getItem('masterSiswa');
       const localGuru = localStorage.getItem('masterGuru');
 
@@ -164,12 +165,31 @@
         masterSiswa = JSON.parse(localSiswa);
         masterGuru = JSON.parse(localGuru);
         populateDatalists();
-      } else {
+      } else if (navigator.onLine) {
         syncMasterData();
       }
+
+      // Muat Draf Laporan Lokal jika ada
+      muatDrafLokal();
     };
 
+    function updateStatusKoneksi() {
+      const badge = document.getElementById('statusJaringan');
+      if (navigator.onLine) {
+        badge.className = "badge status-badge bg-success me-2";
+        badge.innerText = "ONLINE";
+      } else {
+        badge.className = "badge status-badge bg-danger me-2";
+        badge.innerText = "OFFLINE (Simpan Lokal)";
+      }
+    }
+
     function syncMasterData() {
+      if (!navigator.onLine) {
+        alert("Anda sedang Offline. Tidak dapat memperbarui Master Data.");
+        return;
+      }
+
       fetch(`${SCRIPT_URL}?action=get_master`)
         .then(res => res.json())
         .then(data => {
@@ -204,7 +224,6 @@
       });
     }
 
-    // FUNGSI UNTUK MENGAMBIL MAPEL BERDASARKAN NAMA GURU YANG DIPILIH
     function onGuruSelected() {
       const inputNama = document.getElementById('inputGuru').value.trim();
       const selectMapel = document.getElementById('selectMapelGuru');
@@ -212,13 +231,10 @@
 
       if (!inputNama) return;
 
-      // Cari guru berdasarkan nama
       const guruFound = masterGuru.find(g => g.nama.toLowerCase() === inputNama.toLowerCase());
 
       if (guruFound && guruFound.mapel) {
-        // Memisah mapel berdasarkan tanda koma (contoh: "FARMAKOLOGI, TOI")
         const listMapel = guruFound.mapel.split(',');
-        
         listMapel.forEach(mapelText => {
           const m = mapelText.trim();
           if (m) {
@@ -229,7 +245,6 @@
           }
         });
 
-        // Jika hanya ada 1 mapel, otomatis terpilih
         if (listMapel.length === 1) {
           selectMapel.selectedIndex = 1;
         }
@@ -245,6 +260,7 @@
 
       siswaList.push({ nama, jam, status });
       renderSiswa();
+      simpanDrafLokal();
       document.getElementById('inputSiswa').value = '';
     }
 
@@ -263,6 +279,7 @@
     function hapusSiswa(idx) {
       siswaList.splice(idx, 1);
       renderSiswa();
+      simpanDrafLokal();
     }
 
     function tambahGuru() {
@@ -275,7 +292,6 @@
 
       if (!namaGuru) { alert('Ketik atau pilih nama guru terlebih dahulu!'); return; }
 
-      // Gabungkan Nama Guru dan Mapel tanpa tanda kurung kosong
       let namaTampil = mapelGuru ? `${namaGuru} - ${mapelGuru}` : namaGuru;
 
       guruList.push({
@@ -287,8 +303,8 @@
       });
 
       renderGuru();
+      simpanDrafLokal();
 
-      // Reset Form Input Guru
       document.getElementById('inputGuru').value = '';
       document.getElementById('selectMapelGuru').innerHTML = '<option value="">-- Pilih Mapel --</option>';
       document.getElementById('tugasGuru').value = '';
@@ -314,6 +330,39 @@
     function hapusGuru(idx) {
       guruList.splice(idx, 1);
       renderGuru();
+      simpanDrafLokal();
+    }
+
+    // PENYIMPANAN LOKAL (OFFLINE FIRST)
+    function simpanDrafLokal() {
+      const draf = {
+        tanggal: document.getElementById('tglPiket').value,
+        petugas: document.getElementById('namaPetugas').value,
+        siswaList: siswaList,
+        guruList: guruList
+      };
+      localStorage.setItem('drafPiket', JSON.stringify(draf));
+    }
+
+    function muatDrafLokal() {
+      const drafRaw = localStorage.getItem('drafPiket');
+      if (drafRaw) {
+        const draf = JSON.parse(drafRaw);
+        if (draf.tanggal) document.getElementById('tglPiket').value = draf.tanggal;
+        if (draf.petugas) document.getElementById('namaPetugas').value = draf.petugas;
+        siswaList = draf.siswaList || [];
+        guruList = draf.guruList || [];
+        renderSiswa();
+        renderGuru();
+      }
+    }
+
+    function bersihkanDrafLokal() {
+      localStorage.removeItem('drafPiket');
+      siswaList = [];
+      guruList = [];
+      renderSiswa();
+      renderGuru();
     }
 
     function kirimLaporan() {
@@ -322,7 +371,11 @@
 
       if (!petugas) { alert('Isi Nama Petugas Piket terlebih dahulu!'); return; }
 
-      // Format tanggal ke DD/MM/YYYY
+      if (!navigator.onLine) {
+        alert('Status HP sedang OFFLINE. Data sudah tersimpan di memori HP. Silakan tekan tombol Upload saat koneksi internet kembali ONLINE!');
+        return;
+      }
+
       const parts = tglRaw.split('-');
       const tglFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
@@ -343,15 +396,12 @@
       .then(res => {
         if (res.status === 'success') {
           alert(' Laporan Berhasil Dikirim!');
-          siswaList = [];
-          guruList = [];
-          renderSiswa();
-          renderGuru();
+          bersihkanDrafLokal();
         } else {
           alert('Gagal mengirim: ' + res.message);
         }
       })
-      .catch(err => alert('Terjadi kesalahan koneksi saat mengirim data.'));
+      .catch(err => alert('Terjadi kesalahan koneksi saat mengirim data. Laporan Anda tetap tersimpan di draf lokal.'));
     }
   </script>
 </body>
