@@ -22,35 +22,27 @@
 
   <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
 
-    <!-- Banner Status Offline & Pending Upload -->
+    <!-- Banner Status Offline -->
     <div id="offlineBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm text-slate-700">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2 font-semibold text-amber-800 text-sm">
           <i class="fa-solid fa-box-archive"></i>
           <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
-        
-        <!-- Area Tombol Aksi Header Offline -->
         <div class="flex items-center gap-2">
-          <!-- Tombol Sembunyikan / Tampilkan -->
-          <button type="button" onclick="toggleOfflineVisibility()" class="text-xs text-amber-900 bg-amber-200/80 hover:bg-amber-300 px-2 py-1 rounded-md border border-amber-400 font-semibold flex items-center gap-1 cursor-pointer transition-all active:scale-95">
+          <button type="button" onclick="toggleOfflineVisibility()" class="text-xs text-amber-900 bg-amber-200/80 hover:bg-amber-300 px-2 py-1 rounded-md border border-amber-400 font-semibold flex items-center gap-1 cursor-pointer">
             <span id="txtToggleList">Sembunyikan</span>
             <i id="iconToggleList" class="fa-solid fa-chevron-up text-[10px]"></i>
           </button>
-          
-          <!-- Tombol Hapus Semua -->
           <button type="button" onclick="clearAllOfflineData()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold hover:underline cursor-pointer">
             Hapus Semua
           </button>
         </div>
       </div>
 
-      <!-- Area Konten Daftar Catatan Offline (Bisa Di-Sembunyikan) -->
-      <div id="offlineContentWrapper" class="transition-all">
-        <!-- Daftar Catatan Offline dengan Tombol Hapus Selektif di Setiap Item -->
+      <div id="offlineContentWrapper">
         <div id="offlineListContainer" class="max-h-48 overflow-y-auto space-y-2 my-2 pr-1"></div>
-        
-        <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow cursor-pointer">
+        <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
           <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
         </button>
       </div>
@@ -70,13 +62,16 @@
       </div>
     </div>
 
-    <!-- Navigasi Tab -->
+    <!-- Navigasi Tab (3 Tab: Guru, Siswa, & Pantau) -->
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
-      <button type="button" id="tabBtnGuru" onclick="switchTab('guru')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow">
+      <button type="button" id="tabBtnGuru" onclick="switchTab('guru')" class="flex-1 py-2 text-center font-semibold text-xs rounded-lg transition-all bg-indigo-600 text-white shadow">
         <i class="fa-solid fa-chalkboard-user mr-1"></i> Izin Guru
       </button>
-      <button type="button" id="tabBtnSiswa" onclick="switchTab('siswa')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
+      <button type="button" id="tabBtnSiswa" onclick="switchTab('siswa')" class="flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
         <i class="fa-solid fa-user-graduate mr-1"></i> Izin Siswa
+      </button>
+      <button type="button" id="tabBtnPantau" onclick="switchTab('pantau')" class="flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
+        <i class="fa-solid fa-chart-line mr-1"></i> Pantau
       </button>
     </div>
 
@@ -199,6 +194,22 @@
         </button>
       </div>
     </form>
+
+    <!-- SECTION PANTAU LAPORAN (Khusus Monitoring Kepala Sekolah) -->
+    <div id="sectionPantau" class="hidden bg-white rounded-xl shadow-sm p-4 border border-slate-200 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-eye text-indigo-600"></i> Monitoring Laporan Masuk
+        </h2>
+        <button onclick="loadDataPantau()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-md border border-indigo-200 flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+
+      <div id="tabelLaporanContainer" class="space-y-4">
+        <p class="text-xs text-slate-500 text-center py-4">Memuat rekapitulasi data...</p>
+      </div>
+    </div>
 
   </main>
 
