@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   checkOnlineStatus();
   loadMasterData();
   renderOfflineList();
-  setupToggleListener();
 
   window.addEventListener("online", checkOnlineStatus);
   window.addEventListener("offline", checkOnlineStatus);
@@ -38,29 +37,53 @@ function checkOnlineStatus() {
   }
 }
 
-// Event Listener khusus Tombol Sembunyikan / Tampilkan
-function setupToggleListener() {
-  const btnToggle = document.getElementById("btnToggleList");
-  if (btnToggle) {
-    btnToggle.addEventListener("click", () => {
-      const wrapper = document.getElementById("offlineContentWrapper");
-      const txt = document.getElementById("txtToggleList");
-      const icon = document.getElementById("iconToggleList");
+// 1. FUNGSI SEMBUNYIKAN / TAMPILKAN
+window.toggleOfflineVisibility = function() {
+  const wrapper = document.getElementById("offlineContentWrapper");
+  const txt = document.getElementById("txtToggleList");
+  const icon = document.getElementById("iconToggleList");
 
-      isOfflineListMinimized = !isOfflineListMinimized;
+  if (!wrapper || !txt || !icon) return;
 
-      if (isOfflineListMinimized) {
-        wrapper.classList.add("hidden");
-        txt.innerText = "Tampilkan";
-        icon.className = "fa-solid fa-chevron-down text-[10px]";
-      } else {
-        wrapper.classList.remove("hidden");
-        txt.innerText = "Sembunyikan";
-        icon.className = "fa-solid fa-chevron-up text-[10px]";
-      }
-    });
+  isOfflineListMinimized = !isOfflineListMinimized;
+
+  if (isOfflineListMinimized) {
+    wrapper.classList.add("hidden");
+    txt.innerText = "Tampilkan";
+    icon.className = "fa-solid fa-chevron-down text-[10px]";
+  } else {
+    wrapper.classList.remove("hidden");
+    txt.innerText = "Sembunyikan";
+    icon.className = "fa-solid fa-chevron-up text-[10px]";
   }
-}
+};
+
+// 2. FUNGSI HAPUS SELEKTIF (PER ITEM CATATAN)
+window.deleteSingleOfflineItem = function(index) {
+  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
+  
+  if (index >= 0 && index < list.length) {
+    // Hapus 1 item spesifik berdasarkan indeksnya
+    list.splice(index, 1);
+    
+    // Simpan kembali ke LocalStorage
+    localStorage.setItem("offline_queue", JSON.stringify(list));
+    
+    // Render ulang tampilan daftar
+    renderOfflineList();
+  }
+};
+
+// 3. FUNGSI HAPUS SEMUANYA
+window.clearAllOfflineData = function() {
+  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
+  if (list.length === 0) return;
+
+  if (confirm(`Yakin ingin menghapus SELURUH ${list.length} catatan offline dari HP?`)) {
+    localStorage.removeItem("offline_queue");
+    renderOfflineList();
+  }
+};
 
 window.switchTab = function(tab) {
   const formG = document.getElementById("formGuru");
@@ -270,6 +293,7 @@ function saveToLocalStorage(item) {
   renderOfflineList();
 }
 
+// FUNGSI RENDER TAMPILAN LIST CATATAN OFFLINE
 function renderOfflineList() {
   const banner = document.getElementById("offlineBanner");
   const textCount = document.getElementById("offlineCountText");
@@ -284,22 +308,23 @@ function renderOfflineList() {
     if (container) {
       let html = "";
       list.forEach((item, idx) => {
-        let sub = item.tipe === "guru" ? item.nama_guru_mapel : item.nama_siswa;
+        let title = item.tipe === "guru" ? item.nama_guru_mapel : item.nama_siswa;
+        let ket = item.tipe === "guru" ? `${item.status} (${item.jam_ke})` : `${item.status_keterangan} (${item.jam_ke})`;
+        
         html += `
-          <div class="p-2 bg-white border border-amber-200 rounded-lg flex justify-between items-center shadow-sm hover:border-amber-300 transition-all">
-            <div class="overflow-hidden mr-2">
-              <div class="flex items-center gap-1.5 mb-0.5">
+          <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between items-center shadow-sm hover:border-amber-400 transition-all">
+            <div class="overflow-hidden pr-2">
+              <div class="flex items-center gap-1.5 mb-1">
                 <span class="font-bold text-indigo-700 uppercase text-[9px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
-                <span class="font-semibold text-slate-800 text-xs truncate">${sub}</span>
+                <span class="font-semibold text-slate-800 text-xs truncate">${title}</span>
               </div>
-              <p class="text-[10px] text-slate-500">${item.status || item.status_keterangan} (${item.jam_ke})</p>
+              <p class="text-[11px] text-slate-500">${ket}</p>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>
-              <button type="button" onclick="deleteSingleOfflineItem(${idx})" title="Hapus catatan ini" class="p-1 text-slate-400 hover:text-rose-600 transition-colors">
-                <i class="fa-solid fa-trash-can text-xs"></i>
-              </button>
-            </div>
+            
+            <!-- Tombol Hapus Selektif Per Item Catatan -->
+            <button type="button" onclick="deleteSingleOfflineItem(${idx})" title="Hapus catatan ini saja" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md border border-rose-200 transition-all cursor-pointer shrink-0">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
           </div>
         `;
       });
@@ -309,24 +334,6 @@ function renderOfflineList() {
     if (banner) banner.classList.add("hidden");
   }
 }
-
-// Hapus Single Item
-window.deleteSingleOfflineItem = function(index) {
-  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
-  if (index >= 0 && index < list.length) {
-    list.splice(index, 1);
-    localStorage.setItem("offline_queue", JSON.stringify(list));
-    renderOfflineList();
-  }
-};
-
-// Hapus Semua Data
-window.clearAllOfflineData = function() {
-  if (confirm("Hapus seluruh daftar catatan offline dari HP?")) {
-    localStorage.removeItem("offline_queue");
-    renderOfflineList();
-  }
-};
 
 // Upload Batch Offline
 window.uploadDataOffline = async function() {
