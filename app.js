@@ -1,4 +1,4 @@
-// PASANG URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+// GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEomr2hZKzEhFzKgOODAuLHT0DbTBHNqncBlvY5vvfGiWF-Rh9oUqMryjgnezfuALq/exec";
 
 let masterSiswa = [];
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("offline", checkOnlineStatus);
 });
 
-// Realtime Clock
+// Jam Realtime
 function setupRealtimeClock() {
   const el = document.getElementById("tanggalWaktu");
   const update = () => {
@@ -25,7 +25,7 @@ function setupRealtimeClock() {
   setInterval(update, 1000);
 }
 
-// Status Koneksi Online / Offline
+// Indicator Status Online / Offline
 function checkOnlineStatus() {
   const badge = document.getElementById("statusKoneksi");
   if (!badge) return;
@@ -38,29 +38,27 @@ function checkOnlineStatus() {
   }
 }
 
-// Navigasi Tab
+// Switch Tab
 window.switchTab = function(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
   const btnG = document.getElementById("tabBtnGuru");
   const btnS = document.getElementById("tabBtnSiswa");
 
-  if (!formG || !formS) return;
-
   if (tab === 'guru') {
     formG.classList.remove("hidden");
     formS.classList.add("hidden");
-    if(btnG) btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
-    if(btnS) btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+    btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
+    btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
   } else {
     formS.classList.remove("hidden");
     formG.classList.add("hidden");
-    if(btnS) btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
-    if(btnG) btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+    btnS.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow";
+    btnG.className = "flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
   }
 };
 
-// Ambil Master Data
+// Ambil Master Data dari Sheet/Cache
 async function loadMasterData() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=get_master`);
@@ -70,153 +68,155 @@ async function loadMasterData() {
       masterGuru = data.guru || [];
       localStorage.setItem("cache_siswa", JSON.stringify(masterSiswa));
       localStorage.setItem("cache_guru", JSON.stringify(masterGuru));
-      populateDatalists();
+      renderDropdowns();
     } else {
       throw new Error(data.message);
     }
   } catch (err) {
-    console.warn("Offline/Gagal terhubung, membaca cache lokal...", err);
+    console.warn("Memuat dari penyimpanan lokal (Offline)...", err);
     masterSiswa = JSON.parse(localStorage.getItem("cache_siswa")) || [];
     masterGuru = JSON.parse(localStorage.getItem("cache_guru")) || [];
-    populateDatalists();
+    renderDropdowns();
   }
 }
 
-// Isi Autocomplete Datalist
-function populateDatalists() {
-  const listSiswa = document.getElementById("listSiswa");
-  const listGuru = document.getElementById("listGuru");
-
-  if (listSiswa) {
-    let html = "";
-    masterSiswa.forEach(s => {
-      let nama = s.NAMA || s.Nama || s.nama || '';
-      let kelas = s.KELAS || s.Kelas || s.kelas || '';
-      if (nama) {
-        let val = kelas ? `${nama} (${kelas})` : nama;
-        html += `<option value="${val}">`;
-      }
-    });
-    listSiswa.innerHTML = html;
-  }
-
-  if (listGuru) {
-    let html = "";
-    masterGuru.forEach(g => {
-      let nama = g.NAMA || g.Nama || g.nama || '';
-      if (nama) {
-        html += `<option value="${nama}">`;
-      }
-    });
-    listGuru.innerHTML = html;
-  }
+// Render Dropdown Utama
+function renderDropdowns() {
+  filterGuruList();
+  filterSiswaList();
 }
 
-// Handler Perubahan Nama Guru untuk Ekstrak List Mapel
-window.onGuruChanged = function() {
-  const inputNama = document.getElementById("inputNamaGuru").value.trim().toLowerCase();
+// Filter pencarian Guru
+window.filterGuruList = function() {
+  const search = (document.getElementById("searchGuru").value || "").toLowerCase();
+  const select = document.getElementById("selectGuru");
+  if (!select) return;
+
+  const filtered = masterGuru.filter(g => {
+    let nama = (g.NAMA || g.Nama || g.nama || "").toLowerCase();
+    return nama.includes(search);
+  });
+
+  let html = '<option value="">-- Pilih Nama Guru --</option>';
+  filtered.forEach(g => {
+    let nama = g.NAMA || g.Nama || g.nama;
+    if (nama) html += `<option value="${nama}">${nama}</option>`;
+  });
+
+  if (filtered.length === 0) html = '<option value="">-- Nama tidak ditemukan --</option>';
+  select.innerHTML = html;
+};
+
+// Filter pencarian Siswa
+window.filterSiswaList = function() {
+  const search = (document.getElementById("searchSiswa").value || "").toLowerCase();
+  const select = document.getElementById("selectSiswa");
+  if (!select) return;
+
+  const filtered = masterSiswa.filter(s => {
+    let nama = (s.NAMA || s.Nama || s.nama || "").toLowerCase();
+    let kelas = (s.KELAS || s.Kelas || s.kelas || "").toLowerCase();
+    return nama.includes(search) || kelas.includes(search);
+  });
+
+  let html = '<option value="">-- Pilih Nama Siswa --</option>';
+  filtered.forEach(s => {
+    let nama = s.NAMA || s.Nama || s.nama;
+    let kelas = s.KELAS || s.Kelas || s.kelas || '';
+    if (nama) {
+      let label = kelas ? `${nama} (${kelas})` : nama;
+      html += `<option value="${label}">${label}</option>`;
+    }
+  });
+
+  if (filtered.length === 0) html = '<option value="">-- Nama tidak ditemukan --</option>';
+  select.innerHTML = html;
+};
+
+// Saat nama guru dipilih di Dropdown -> Muat Mapel terkait
+window.onGuruSelectChanged = function() {
+  const selectedNama = document.getElementById("selectGuru").value;
   const selectMapel = document.getElementById("selectGuruMapel");
 
-  if (!selectMapel) return;
-
-  if (!inputNama) {
+  if (!selectedNama) {
     selectMapel.innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
     return;
   }
 
-  // Cari data guru di master data
-  const matchGuru = masterGuru.find(g => {
-    let namaG = (g.NAMA || g.Nama || g.nama || '').trim().toLowerCase();
-    return namaG === inputNama || inputNama.includes(namaG);
-  });
+  const guruObj = masterGuru.find(g => (g.NAMA || g.Nama || g.nama) === selectedNama);
 
-  if (matchGuru) {
-    let strMapel = matchGuru.MAPEL || matchGuru.Mapel || matchGuru.mapel || '';
-    if (strMapel) {
-      // Pecah jika guru mengampu beberapa mapel yang dipisah koma
-      let arrMapel = strMapel.split(',').map(m => m.trim()).filter(m => m !== '');
+  if (guruObj) {
+    let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
+    if (mapelStr) {
+      let listMapel = mapelStr.split(',').map(m => m.trim()).filter(m => m !== '');
       let html = '<option value="">-- Pilih Mapel --</option>';
-      arrMapel.forEach(m => {
+      listMapel.forEach(m => {
         html += `<option value="${m}">${m}</option>`;
       });
       selectMapel.innerHTML = html;
     } else {
-      selectMapel.innerHTML = '<option value="-">Tanpa Mapel Specific</option>';
+      selectMapel.innerHTML = '<option value="-">Tanpa Mapel Khusus</option>';
     }
-  } else {
-    // Jika nama tidak persis dalam master data
-    selectMapel.innerHTML = '<option value="">-- Pilih Mapel --</option><option value="Lainnya">Lainnya / Umum</option>';
   }
 };
 
-// Form Handlers (Upload Langsung)
-window.handleSubmitedGuru = async function(e) {
-  e.preventDefault();
-  const payload = getFormGuruPayload();
-  if (!payload) return;
-
-  await sendData(payload, "simpan_laporan_guru");
-  e.target.reset();
-  document.getElementById("selectGuruMapel").innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
-};
-
-window.handleSubmitedSiswa = async function(e) {
-  e.preventDefault();
-  const payload = getFormSiswaPayload();
-  if (!payload) return;
-
-  await sendData(payload, "simpan_laporan_siswa");
-  e.target.reset();
-};
-
-// Ambil Payload Guru
-function getFormGuruPayload() {
+// Validasi & Ambil Payload Guru
+function getGuruPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
-  if (!petugas) { alert("Nama Petugas Piket harus diisi!"); return null; }
+  if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
 
-  const namaGuru = document.getElementById("inputNamaGuru").value.trim();
+  const namaGuru = document.getElementById("selectGuru").value;
   const mapel = document.getElementById("selectGuruMapel").value;
+  const jamKe = document.getElementById("guruJamKe").value;
+  const status = document.getElementById("guruStatus").value;
 
-  if (!namaGuru) { alert("Nama Guru harus diisi!"); return null; }
-  if (!mapel) { alert("Silakan pilih Mata Pelajaran!"); return null; }
+  if (!namaGuru) { alert("Pilih Nama Guru terlebih dahulu!"); return null; }
+  if (!mapel) { alert("Pilih Mata Pelajaran!"); return null; }
+  if (!jamKe) { alert("Pilih Jam Ke-!"); return null; }
+  if (!status) { alert("Pilih Status / Keterangan!"); return null; }
 
   return {
     tipe: "guru",
     tanggal: new Date().toLocaleString("id-ID"),
     petugas_piket: petugas,
     nama_guru_mapel: `${namaGuru} [${mapel}]`,
-    jam_ke: document.getElementById("guruJamKe").value,
+    jam_ke: jamKe,
     jam_masuk: document.getElementById("guruJamMasuk").value || '-',
-    status: document.getElementById("guruStatus").value,
+    status: status,
     tugas_materi: document.getElementById("guruTugas").value || '-'
   };
 }
 
-// Ambil Payload Siswa
-function getFormSiswaPayload() {
+// Validasi & Ambil Payload Siswa
+function getSiswaPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
-  if (!petugas) { alert("Nama Petugas Piket harus diisi!"); return null; }
+  if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
 
-  const namaSiswa = document.getElementById("inputNamaSiswa").value.trim();
-  if (!namaSiswa) { alert("Nama Siswa harus diisi!"); return null; }
+  const namaSiswa = document.getElementById("selectSiswa").value;
+  const jamKe = document.getElementById("siswaJamKe").value;
+  const status = document.getElementById("siswaStatus").value;
+
+  if (!namaSiswa) { alert("Pilih Nama Siswa terlebih dahulu!"); return null; }
+  if (!jamKe) { alert("Pilih Jam Ke-!"); return null; }
+  if (!status) { alert("Pilih Status / Keterangan!"); return null; }
 
   return {
     tipe: "siswa",
     tanggal: new Date().toLocaleString("id-ID"),
     petugas_piket: petugas,
     nama_siswa: namaSiswa,
-    jam_ke: document.getElementById("siswaJamKe").value,
-    status_keterangan: document.getElementById("siswaStatus").value
+    jam_ke: jamKe,
+    status_keterangan: status
   };
 }
 
-// Simpan Manual Offline (Tombol Simpan Catatan HP)
+// Fungsi Simpan Manual Offline (Tombol Simpan Offline)
 window.simpanManualOffline = function(type) {
-  let payload = type === 'guru' ? getFormGuruPayload() : getFormSiswaPayload();
+  const payload = type === 'guru' ? getGuruPayload() : getSiswaPayload();
   if (!payload) return;
 
   saveToLocalStorage(payload);
-  alert("Catatan berhasil disimpan sementara di HP!");
+  alert("Catatan berhasil disimpan di HP!");
 
   if (type === 'guru') {
     document.getElementById("formGuru").reset();
@@ -226,7 +226,27 @@ window.simpanManualOffline = function(type) {
   }
 };
 
-// Pengiriman Data ke Apps Script
+// Form Handler (Upload Langsung)
+window.handleSubmitedGuru = async function(e) {
+  e.preventDefault();
+  const payload = getGuruPayload();
+  if (!payload) return;
+
+  await sendData(payload, "simpan_laporan_guru");
+  e.target.reset();
+  document.getElementById("selectGuruMapel").innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
+};
+
+window.handleSubmitedSiswa = async function(e) {
+  e.preventDefault();
+  const payload = getSiswaPayload();
+  if (!payload) return;
+
+  await sendData(payload, "simpan_laporan_siswa");
+  e.target.reset();
+};
+
+// Kirim Data Online / Simpan Otomatis Offline
 async function sendData(payload, action) {
   if (navigator.onLine) {
     try {
@@ -245,7 +265,7 @@ async function sendData(payload, action) {
   }
 
   saveToLocalStorage(payload);
-  alert("Koneksi tersendat/offline. Catatan tersimpan di HP & siap diupload!");
+  alert("Internet tidak stabil / Offline. Data berhasil tersimpan di HP!");
 }
 
 function saveToLocalStorage(item) {
@@ -288,7 +308,7 @@ function renderOfflineList() {
   }
 }
 
-// Tombol Upload Batch Offline ke Google Spreadsheet
+// Upload Batch Offline
 window.uploadDataOffline = async function() {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
 
