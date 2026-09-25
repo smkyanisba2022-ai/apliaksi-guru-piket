@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- Responsive Viewport agar ukuran pas di layar HP -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Piket Guru Sekolah</title>
+    
+    <!-- Warna Bar Browser HP (Metastatus Bar PWA) -->
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- CSS Bootstrap 5 & FontAwesome (Untuk Tampilan Modern & Ikon) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            padding-bottom: 40px; 
+        }
+        .navbar-custom { 
+            background: #0f172a; 
+            color: white; 
+            border-radius: 0 0 20px 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+        }
+        .card-custom { 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            margin-bottom: 20px; 
+        }
+        .btn-round { 
+            border-radius: 50px; 
+            font-weight: 700; 
+            padding: 12px 20px; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR ATAS & INDIKATOR KONEKSI -->
+    <nav class="navbar navbar-custom p-3 mb-4">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <span class="fw-bold fs-5"><i class="fa-solid fa-clipboard-user me-2"></i>E-Piket Mobile</span>
+            <!-- Indikator ini berubah otomatis saat HP Online / Offline -->
+            <span id="status-koneksi" class="badge bg-danger"><i class="fa-solid fa-wifi"></i> Offline</span>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 600px;">
+
+        <!-- BOKS INFO PETUGAS & TOMBOL SYNC MASTER -->
+        <div class="card card-custom p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="w-100 me-2">
+                    <label class="text-muted small fw-bold">Nama Petugas Piket:</label>
+                    <input type="text" id="nama-petugas" class="form-control form-control-sm fw-bold" placeholder="Ketik nama Anda...">
+                </div>
+                <button onclick="downloadMasterData()" class="btn btn-outline-primary btn-sm rounded-pill mt-3" style="white-space: nowrap;">
+                    <i class="fa-solid fa-rotate me-1"></i> Sync Master
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. FORM INPUT ABSEN SISWA -->
+        <div class="card card-custom p-4 bg-white">
+            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-graduate me-2"></i>1. Catat Siswa Bermasalah</h6>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small">Cari Nama Siswa (Autocomplete):</label>
+                <!-- Target DataList untuk pencarian otomatis -->
+                <input list="list-siswa" id="input-siswa" class="form-control" placeholder="Ketik nama / kelas siswa...">
+                <datalist id="list-siswa"></datalist>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-8">
+                    <select id="status-siswa" class="form-select">
+                        <option value="Alpa">Alpa (Tanpa Keterangan)</option>
+                        <option value="Izin">Izin</option>
+                        <option value="Sakit">Sakit</option>
+                    </select>
+                </div>
+                <div class="col-4">
+                    <button onclick="tambahSiswa()" class="btn btn-primary w-100"><i class="fa-solid fa-plus"></i> Tambah</button>
+                </div>
+            </div>
+
+            <!-- Tempat Menampilkan Daftar Siswa yang Berhasil Ditambahkan Sementara -->
+            <ul id="daftar-siswa-temp" class="list-group list-group-flush border-top mt-2"></ul>
+        </div>
+
+        <!-- 2. FORM INPUT GURU TIDAK HADIR -->
+        <div class="card card-custom p-4 bg-white">
+            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-chalkboard-user me-2"></i>2. Catat Guru Tidak Hadir</h6>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small">Cari Nama Guru:</label>
+                <input list="list-guru" id="input-guru" class="form-control" placeholder="Ketik nama / mapel guru...">
+                <datalist id="list-guru"></datalist>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted small">Keterangan Tidak Hadir:</label>
+                <select id="status-guru" class="form-select mb-2">
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Tanpa Keterangan">Tanpa Keterangan</option>
+                </select>
+                
+                <label class="form-label text-muted small">Materi & Tugas yang Ditinggalkan:</label>
+                <textarea id="tugas-guru" class="form-control" rows="2" placeholder="Contoh: LKS Halaman 12 Bab 2..."></textarea>
+            </div>
+
+            <button onclick="tambahGuru()" class="btn btn-danger w-100 mb-3"><i class="fa-solid fa-plus"></i> Tambah Guru</button>
+
+            <!-- Tempat Menampilkan Daftar Guru yang Berhasil Ditambahkan Sementara -->
+            <ul id="daftar-guru-temp" class="list-group list-group-flush border-top mt-2"></ul>
+        </div>
+
+        <!-- TOMBOL SIMPAN LOKAL & UPLOAD -->
+        <div class="d-grid gap-2 mt-4">
+            <button onclick="simpanLokal()" class="btn btn-secondary btn-round"><i class="fa-solid fa-floppy-disk me-2"></i>Simpan Draf di HP (Offline)</button>
+            <button onclick="uploadKePusat()" class="btn btn-success btn-round"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload Laporan ke Pusat (Online)</button>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIK PWA & OFFLINE-FIRST -->
+    <script>
+        // =========================================================================
+        // PASTIKAN PASTE URL HASIL DEPLOY APPS SCRIPT ANDA DI BAWAH INI:
+        // =========================================================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxR_LxFxTgDvxF_f3ahzFxCsvsLkhDKvnMXhpYtHks6tOVCHxxtx-q3NsqmluRYIhK2/exec";
+
+        let tempSiswa = [];
+        let tempGuru = [];
+
+        // -------------------------------------------------------------------------
+        // 1. DETEKSI STATUS KONEKSI INTERNET SECARA REAL-TIME
+        // -------------------------------------------------------------------------
+        window.addEventListener('online', updateStatusKoneksi);
+        window.addEventListener('offline', updateStatusKoneksi);
+
+        function updateStatusKoneksi() {
+            const badge = document.getElementById('status-koneksi');
+            if (navigator.onLine) {
+                badge.className = "badge bg-success";
+                badge.innerHTML = '<i class="fa-solid fa-wifi"></i> Online';
+            } else {
+                badge.className = "badge bg-danger";
+                badge.innerHTML = '<i class="fa-solid fa-wifi"></i> Offline';
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 2. MENGUNDUH DATA MASTER SISWA & GURU (DARI GOOGLE SHEETS KE HP)
+        // -------------------------------------------------------------------------
+        async function downloadMasterData() {
+            if (!navigator.onLine) return alert("Harus terhubung ke internet untuk Sinkronisasi Data Master!");
+            
+            try {
+                // Mengambil data dari endpoint Google Apps Script
+                const res = await fetch(`${SCRIPT_URL}?action=get_master`);
+                const data = await res.json();
+                
+                // Menyimpan master data secara permanen di memori HP (LocalStorage)
+                localStorage.setItem('master_siswa', JSON.stringify(data.siswa));
+                localStorage.setItem('master_guru', JSON.stringify(data.guru));
+                
+                loadDatalist();
+                alert("Sukses! Data master Siswa & Guru telah disimpan di HP Anda. Sekarang Anda bisa melakukan pencarian secara OFFLINE.");
+            } catch (err) {
+                alert("Gagal mengunduh data master. Cek URL Apps Script Anda.");
+            }
+        }
+
+        // Memuat master data dari LocalStorage HP ke elemen Datalist (Autocomplete)
+        function loadDatalist() {
+            const siswa = JSON.parse(localStorage.getItem('master_siswa') || '[]');
+            const guru = JSON.parse(localStorage.getItem('master_guru') || '[]');
+
+            document.getElementById('list-siswa').innerHTML = siswa.map(s => `<option value="${s.nama} (${s.kelas})">`).join('');
+            document.getElementById('list-guru').innerHTML = guru.map(g => `<option value="${g.nama} (${g.mapel})">`).join('');
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. LOGIKA MEMASUKKAN INPUTAN SEMENTARA KE DAFTAR
+        // -------------------------------------------------------------------------
+        function tambahSiswa() {
+            const nama = document.getElementById('input-siswa').value;
+            const status = document.getElementById('status-siswa').value;
+            if(!nama) return alert("Pilih nama siswa terlebih dahulu");
+
+            tempSiswa.push({ nama, status });
+            document.getElementById('input-siswa').value = '';
+            renderTempList();
+        }
+
+        function tambahGuru() {
+            const nama = document.getElementById('input-guru').value;
+            const status = document.getElementById('status-guru').value;
+            const tugas = document.getElementById('tugas-guru').value;
+            if(!nama) return alert("Pilih nama guru terlebih dahulu");
+
+            tempGuru.push({ nama, status, tugas });
+            document.getElementById('input-guru').value = '';
+            document.getElementById('tugas-guru').value = '';
+            renderTempList();
+        }
+
+        // Menampilkan antrean inputan ke dalam layar HP
+        function renderTempList() {
+            document.getElementById('daftar-siswa-temp').innerHTML = tempSiswa.map((s, i) => 
+                `<li class="list-group-item d-flex justify-content-between align-items-center small py-2">${s.nama} <span class="badge bg-warning text-dark">${s.status}</span></li>`
+            ).join('');
+
+            document.getElementById('daftar-guru-temp').innerHTML = tempGuru.map((g, i) => 
+                `<li class="list-group-item small py-2"><b>${g.nama}</b> [${g.status}]<br><i class="text-muted">${g.tugas}</i></li>`
+            ).join('');
+        }
+
+        // -------------------------------------------------------------------------
+        // 4. SIMPAN DRAF KE LOCALSTORAGE HP (FUNGSI OFFLINE UTAMA)
+        // -------------------------------------------------------------------------
+        function simpanLokal() {
+            const petugas = document.getElementById('nama-petugas').value;
+            if(!petugas) return alert("Isi nama Petugas Piket terlebih dahulu!");
+
+            const laporan = {
+                petugas: petugas,
+                siswaList: tempSiswa,
+                guruList: tempGuru,
+                waktuSimpan: new Date().toLocaleString('id-ID')
+            };
+
+            // Mengubah objek JavaScript menjadi teks JSON untuk disimpan di internal HP
+            localStorage.setItem('draf_laporan_piket', JSON.stringify(laporan));
+            alert("Laporan berhasil disimpan sementara di HP! Anda bisa melanjutkan atau meng-uploadnya nanti saat mendapat koneksi internet.");
+        }
+
+        // -------------------------------------------------------------------------
+        // 5. UPLOAD HASIL LAPORAN KE GOOGLE SHEETS (ONLINE)
+        // -------------------------------------------------------------------------
+        async function uploadKePusat() {
+            if (!navigator.onLine) return alert("Tidak ada koneksi internet! Harap cari sinyal/Wifi terlebih dahulu untuk melakukan upload.");
+
+            const rawData = localStorage.getItem('draf_laporan_piket');
+            
+            // Jika draf di HP kosong, gunakan data yang sedang ada di layar
+            const dataToSend = rawData ? JSON.parse(rawData) : {
+                petugas: document.getElementById('nama-petugas').value,
+                siswaList: tempSiswa,
+                guruList: tempGuru
+            };
+
+            if(!dataToSend.petugas) return alert("Nama petugas piket belum diisi!");
+            if(dataToSend.siswaList.length === 0 && dataToSend.guruList.length === 0) {
+                return alert("Tidak ada data laporan siswa atau guru untuk di-upload!");
+            }
+
+            try {
+                // Mengirimkan data laporan dalam bentuk POST JSON ke Google Apps Script
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(dataToSend)
+                });
+
+                const res = await response.json();
+                if(res.status === 'success') {
+                    alert("ALHAMDULILLAH! Laporan berhasil terkirim dan tersimpan di Google Sheets Pusat!");
+                    
+                    // Bersihkan draf lokal setelah berhasil terkirim
+                    localStorage.removeItem('draf_laporan_piket');
+                    tempSiswa = []; 
+                    tempGuru = [];
+                    renderTempList();
+                }
+            } catch (err) {
+                alert("Gagal meng-upload data. Pastikan konfigurasi Apps Script sudah benar.");
+            }
+        }
+
+        // Inisialisasi awal saat web dipanggil
+        updateStatusKoneksi();
+        loadDatalist();
+    </script>
+</body>
+</html>
