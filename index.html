@@ -29,21 +29,28 @@
           <i class="fa-solid fa-box-archive"></i>
           <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
+        
+        <!-- Area Tombol Aksi Header Offline -->
         <div class="flex items-center gap-2">
           <!-- Tombol Sembunyikan / Tampilkan -->
-          <button type="button" id="btnToggleList" class="text-xs text-amber-900 bg-amber-200/70 hover:bg-amber-200 px-2.5 py-1 rounded-md border border-amber-300 font-semibold flex items-center gap-1 cursor-pointer transition-all">
+          <button type="button" onclick="toggleOfflineVisibility()" class="text-xs text-amber-900 bg-amber-200/80 hover:bg-amber-300 px-2 py-1 rounded-md border border-amber-400 font-semibold flex items-center gap-1 cursor-pointer transition-all active:scale-95">
             <span id="txtToggleList">Sembunyikan</span>
             <i id="iconToggleList" class="fa-solid fa-chevron-up text-[10px]"></i>
           </button>
+          
           <!-- Tombol Hapus Semua -->
-          <button type="button" onclick="clearAllOfflineData()" class="text-xs text-rose-600 hover:text-rose-800 font-medium hover:underline">Hapus Semua</button>
+          <button type="button" onclick="clearAllOfflineData()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold hover:underline cursor-pointer">
+            Hapus Semua
+          </button>
         </div>
       </div>
 
-      <!-- Wrapper yang di-minimize -->
+      <!-- Area Konten Daftar Catatan Offline (Bisa Di-Sembunyikan) -->
       <div id="offlineContentWrapper" class="transition-all">
-        <div id="offlineListContainer" class="max-h-36 overflow-y-auto space-y-1.5 text-xs mb-3 pr-1"></div>
-        <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
+        <!-- Daftar Catatan Offline dengan Tombol Hapus Selektif di Setiap Item -->
+        <div id="offlineListContainer" class="max-h-48 overflow-y-auto space-y-2 my-2 pr-1"></div>
+        
+        <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow cursor-pointer">
           <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
         </button>
       </div>
