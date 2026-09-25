@@ -25,7 +25,7 @@ function setupRealtimeClock() {
   setInterval(update, 1000);
 }
 
-// Indicator Status Online / Offline
+// Status Online / Offline
 function checkOnlineStatus() {
   const badge = document.getElementById("statusKoneksi");
   if (!badge) return;
@@ -58,7 +58,7 @@ window.switchTab = function(tab) {
   }
 };
 
-// Ambil Master Data dari Sheet/Cache
+// Ambil Master Data dari Spreadsheet
 async function loadMasterData() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=get_master`);
@@ -80,60 +80,38 @@ async function loadMasterData() {
   }
 }
 
-// Render Dropdown Utama
+// Render Dropdown Guru dan Siswa
 function renderDropdowns() {
-  filterGuruList();
-  filterSiswaList();
+  // Dropdown Guru (Murni nama guru)
+  const selectGuru = document.getElementById("selectGuru");
+  if (selectGuru) {
+    let htmlGuru = '<option value="">-- Pilih Nama Guru --</option>';
+    masterGuru.forEach(g => {
+      let nama = g.NAMA || g.Nama || g.nama;
+      if (nama) {
+        htmlGuru += `<option value="${nama}">${nama}</option>`;
+      }
+    });
+    selectGuru.innerHTML = htmlGuru;
+  }
+
+  // Dropdown Siswa (Nama + Kelas)
+  const selectSiswa = document.getElementById("selectSiswa");
+  if (selectSiswa) {
+    let htmlSiswa = '<option value="">-- Pilih Nama Siswa --</option>';
+    masterSiswa.forEach(s => {
+      let nama = s.NAMA || s.Nama || s.nama;
+      let kelas = s.KELAS || s.Kelas || s.kelas || '';
+      if (nama) {
+        let label = kelas ? `${nama} - ${kelas}` : nama;
+        htmlSiswa += `<option value="${label}">${label}</option>`;
+      }
+    });
+    selectSiswa.innerHTML = htmlSiswa;
+  }
 }
 
-// Filter pencarian Guru
-window.filterGuruList = function() {
-  const search = (document.getElementById("searchGuru").value || "").toLowerCase();
-  const select = document.getElementById("selectGuru");
-  if (!select) return;
-
-  const filtered = masterGuru.filter(g => {
-    let nama = (g.NAMA || g.Nama || g.nama || "").toLowerCase();
-    return nama.includes(search);
-  });
-
-  let html = '<option value="">-- Pilih Nama Guru --</option>';
-  filtered.forEach(g => {
-    let nama = g.NAMA || g.Nama || g.nama;
-    if (nama) html += `<option value="${nama}">${nama}</option>`;
-  });
-
-  if (filtered.length === 0) html = '<option value="">-- Nama tidak ditemukan --</option>';
-  select.innerHTML = html;
-};
-
-// Filter pencarian Siswa
-window.filterSiswaList = function() {
-  const search = (document.getElementById("searchSiswa").value || "").toLowerCase();
-  const select = document.getElementById("selectSiswa");
-  if (!select) return;
-
-  const filtered = masterSiswa.filter(s => {
-    let nama = (s.NAMA || s.Nama || s.nama || "").toLowerCase();
-    let kelas = (s.KELAS || s.Kelas || s.kelas || "").toLowerCase();
-    return nama.includes(search) || kelas.includes(search);
-  });
-
-  let html = '<option value="">-- Pilih Nama Siswa --</option>';
-  filtered.forEach(s => {
-    let nama = s.NAMA || s.Nama || s.nama;
-    let kelas = s.KELAS || s.Kelas || s.kelas || '';
-    if (nama) {
-      let label = kelas ? `${nama} (${kelas})` : nama;
-      html += `<option value="${label}">${label}</option>`;
-    }
-  });
-
-  if (filtered.length === 0) html = '<option value="">-- Nama tidak ditemukan --</option>';
-  select.innerHTML = html;
-};
-
-// Saat nama guru dipilih di Dropdown -> Muat Mapel terkait
+// Ketika Nama Guru dipilih -> Populate Dropdown Mapel khusus Guru tersebut
 window.onGuruSelectChanged = function() {
   const selectedNama = document.getElementById("selectGuru").value;
   const selectMapel = document.getElementById("selectGuruMapel");
@@ -155,12 +133,12 @@ window.onGuruSelectChanged = function() {
       });
       selectMapel.innerHTML = html;
     } else {
-      selectMapel.innerHTML = '<option value="-">Tanpa Mapel Khusus</option>';
+      selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
     }
   }
 };
 
-// Validasi & Ambil Payload Guru
+// Ambil Payload Guru
 function getGuruPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
@@ -187,7 +165,7 @@ function getGuruPayload() {
   };
 }
 
-// Validasi & Ambil Payload Siswa
+// Ambil Payload Siswa
 function getSiswaPayload() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   if (!petugas) { alert("Nama Petugas Piket wajib diisi!"); return null; }
@@ -210,7 +188,7 @@ function getSiswaPayload() {
   };
 }
 
-// Fungsi Simpan Manual Offline (Tombol Simpan Offline)
+// Simpan Offline Manual
 window.simpanManualOffline = function(type) {
   const payload = type === 'guru' ? getGuruPayload() : getSiswaPayload();
   if (!payload) return;
@@ -246,7 +224,7 @@ window.handleSubmitedSiswa = async function(e) {
   e.target.reset();
 };
 
-// Kirim Data Online / Simpan Otomatis Offline
+// Send Data ke Apps Script
 async function sendData(payload, action) {
   if (navigator.onLine) {
     try {
@@ -260,12 +238,12 @@ async function sendData(payload, action) {
         return;
       }
     } catch (e) {
-      console.log("Kirim online gagal, menyimpan ke offline...", e);
+      console.log("Gagal terhubung, menyimpan ke lokal offline...", e);
     }
   }
 
   saveToLocalStorage(payload);
-  alert("Internet tidak stabil / Offline. Data berhasil tersimpan di HP!");
+  alert("Offline / Koneksi terputus. Data disimpan di memori HP!");
 }
 
 function saveToLocalStorage(item) {
@@ -313,7 +291,7 @@ window.uploadDataOffline = async function() {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
 
   if (list.length === 0) {
-    alert("Tidak ada catatan offline yang tersimpan.");
+    alert("Tidak ada catatan offline tersimpan.");
     return;
   }
 
@@ -342,7 +320,7 @@ window.uploadDataOffline = async function() {
       throw new Error(data.message);
     }
   } catch (err) {
-    alert("Gagal mengunggah. Pastikan koneksi internet aktif!");
+    alert("Gagal mengunggah. Pastikan internet aktif!");
     console.error(err);
   } finally {
     if (btn) {
