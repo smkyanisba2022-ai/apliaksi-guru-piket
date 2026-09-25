@@ -1,4 +1,4 @@
-// GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+// PASANG URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEomr2hZKzEhFzKgOODAuLHT0DbTBHNqncBlvY5vvfGiWF-Rh9oUqMryjgnezfuALq/exec";
 
 let masterSiswa = [];
@@ -25,7 +25,7 @@ function setupRealtimeClock() {
   setInterval(update, 1000);
 }
 
-// Status Koneksi
+// Status Koneksi Online / Offline
 function checkOnlineStatus() {
   const badge = document.getElementById("statusKoneksi");
   if (!badge) return;
@@ -38,7 +38,7 @@ function checkOnlineStatus() {
   }
 }
 
-// Fungsi Pindah Tab (Siswa / Guru)
+// Navigasi Tab
 window.switchTab = function(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
@@ -70,96 +70,163 @@ async function loadMasterData() {
       masterGuru = data.guru || [];
       localStorage.setItem("cache_siswa", JSON.stringify(masterSiswa));
       localStorage.setItem("cache_guru", JSON.stringify(masterGuru));
-      populateDropdowns();
+      populateDatalists();
     } else {
       throw new Error(data.message);
     }
   } catch (err) {
-    console.warn("Gagal terhubung ke server, mengambil data cache...", err);
+    console.warn("Offline/Gagal terhubung, membaca cache lokal...", err);
     masterSiswa = JSON.parse(localStorage.getItem("cache_siswa")) || [];
     masterGuru = JSON.parse(localStorage.getItem("cache_guru")) || [];
-    populateDropdowns();
+    populateDatalists();
   }
 }
 
-// Isi Dropdown Guru & Siswa
-function populateDropdowns() {
-  const selSiswa = document.getElementById("selectSiswa");
-  const selGuru = document.getElementById("selectGuru");
+// Isi Autocomplete Datalist
+function populateDatalists() {
+  const listSiswa = document.getElementById("listSiswa");
+  const listGuru = document.getElementById("listGuru");
 
-  if (selSiswa) {
-    let html = '<option value="">-- Pilih Nama Siswa --</option>';
-    if (masterSiswa.length > 0) {
-      masterSiswa.forEach(s => {
-        let nama = s.NAMA || s.Nama || s.nama || '';
-        let kelas = s.KELAS || s.Kelas || s.kelas || '-';
-        if (nama) html += `<option value="${nama}">${nama} (${kelas})</option>`;
-      });
-    } else {
-      html = '<option value="">-- Data Siswa Kosong --</option>';
-    }
-    selSiswa.innerHTML = html;
+  if (listSiswa) {
+    let html = "";
+    masterSiswa.forEach(s => {
+      let nama = s.NAMA || s.Nama || s.nama || '';
+      let kelas = s.KELAS || s.Kelas || s.kelas || '';
+      if (nama) {
+        let val = kelas ? `${nama} (${kelas})` : nama;
+        html += `<option value="${val}">`;
+      }
+    });
+    listSiswa.innerHTML = html;
   }
 
-  if (selGuru) {
-    let html = '<option value="">-- Pilih Guru & Mapel --</option>';
-    if (masterGuru.length > 0) {
-      masterGuru.forEach(g => {
-        let nama = g.NAMA || g.Nama || g.nama || '';
-        let mapel = g.MAPEL || g.Mapel || g.mapel || '';
-        if (nama) {
-          let label = mapel ? `${nama} - ${mapel}` : nama;
-          html += `<option value="${label}">${label}</option>`;
-        }
-      });
-    } else {
-      html = '<option value="">-- Data Guru Kosong --</option>';
-    }
-    selGuru.innerHTML = html;
+  if (listGuru) {
+    let html = "";
+    masterGuru.forEach(g => {
+      let nama = g.NAMA || g.Nama || g.nama || '';
+      if (nama) {
+        html += `<option value="${nama}">`;
+      }
+    });
+    listGuru.innerHTML = html;
   }
 }
 
-// Handle Submit Guru
+// Handler Perubahan Nama Guru untuk Ekstrak List Mapel
+window.onGuruChanged = function() {
+  const inputNama = document.getElementById("inputNamaGuru").value.trim().toLowerCase();
+  const selectMapel = document.getElementById("selectGuruMapel");
+
+  if (!selectMapel) return;
+
+  if (!inputNama) {
+    selectMapel.innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
+    return;
+  }
+
+  // Cari data guru di master data
+  const matchGuru = masterGuru.find(g => {
+    let namaG = (g.NAMA || g.Nama || g.nama || '').trim().toLowerCase();
+    return namaG === inputNama || inputNama.includes(namaG);
+  });
+
+  if (matchGuru) {
+    let strMapel = matchGuru.MAPEL || matchGuru.Mapel || matchGuru.mapel || '';
+    if (strMapel) {
+      // Pecah jika guru mengampu beberapa mapel yang dipisah koma
+      let arrMapel = strMapel.split(',').map(m => m.trim()).filter(m => m !== '');
+      let html = '<option value="">-- Pilih Mapel --</option>';
+      arrMapel.forEach(m => {
+        html += `<option value="${m}">${m}</option>`;
+      });
+      selectMapel.innerHTML = html;
+    } else {
+      selectMapel.innerHTML = '<option value="-">Tanpa Mapel Specific</option>';
+    }
+  } else {
+    // Jika nama tidak persis dalam master data
+    selectMapel.innerHTML = '<option value="">-- Pilih Mapel --</option><option value="Lainnya">Lainnya / Umum</option>';
+  }
+};
+
+// Form Handlers (Upload Langsung)
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
-  const petugas = document.getElementById("petugasPiket").value;
-  if (!petugas) { alert("Harap isi nama Petugas Piket terlebih dahulu!"); return; }
-
-  const payload = {
-    tipe: "guru",
-    tanggal: new Date().toLocaleString("id-ID"),
-    petugas_piket: petugas,
-    nama_guru_mapel: document.getElementById("selectGuru").value,
-    jam_ke: document.getElementById("guruJamKe").value,
-    jam_masuk: document.getElementById("guruJamMasuk").value,
-    status: document.getElementById("guruStatus").value,
-    tugas_materi: document.getElementById("guruTugas").value
-  };
+  const payload = getFormGuruPayload();
+  if (!payload) return;
 
   await sendData(payload, "simpan_laporan_guru");
   e.target.reset();
+  document.getElementById("selectGuruMapel").innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
 };
 
-// Handle Submit Siswa
 window.handleSubmitedSiswa = async function(e) {
   e.preventDefault();
-  const petugas = document.getElementById("petugasPiket").value;
-  if (!petugas) { alert("Harap isi nama Petugas Piket terlebih dahulu!"); return; }
-
-  const payload = {
-    tipe: "siswa",
-    tanggal: new Date().toLocaleString("id-ID"),
-    petugas_piket: petugas,
-    nama_siswa: document.getElementById("selectSiswa").value,
-    jam_ke: document.getElementById("siswaJamKe").value,
-    status_keterangan: document.getElementById("siswaStatus").value
-  };
+  const payload = getFormSiswaPayload();
+  if (!payload) return;
 
   await sendData(payload, "simpan_laporan_siswa");
   e.target.reset();
 };
 
-// Kirim Data
+// Ambil Payload Guru
+function getFormGuruPayload() {
+  const petugas = document.getElementById("petugasPiket").value.trim();
+  if (!petugas) { alert("Nama Petugas Piket harus diisi!"); return null; }
+
+  const namaGuru = document.getElementById("inputNamaGuru").value.trim();
+  const mapel = document.getElementById("selectGuruMapel").value;
+
+  if (!namaGuru) { alert("Nama Guru harus diisi!"); return null; }
+  if (!mapel) { alert("Silakan pilih Mata Pelajaran!"); return null; }
+
+  return {
+    tipe: "guru",
+    tanggal: new Date().toLocaleString("id-ID"),
+    petugas_piket: petugas,
+    nama_guru_mapel: `${namaGuru} [${mapel}]`,
+    jam_ke: document.getElementById("guruJamKe").value,
+    jam_masuk: document.getElementById("guruJamMasuk").value || '-',
+    status: document.getElementById("guruStatus").value,
+    tugas_materi: document.getElementById("guruTugas").value || '-'
+  };
+}
+
+// Ambil Payload Siswa
+function getFormSiswaPayload() {
+  const petugas = document.getElementById("petugasPiket").value.trim();
+  if (!petugas) { alert("Nama Petugas Piket harus diisi!"); return null; }
+
+  const namaSiswa = document.getElementById("inputNamaSiswa").value.trim();
+  if (!namaSiswa) { alert("Nama Siswa harus diisi!"); return null; }
+
+  return {
+    tipe: "siswa",
+    tanggal: new Date().toLocaleString("id-ID"),
+    petugas_piket: petugas,
+    nama_siswa: namaSiswa,
+    jam_ke: document.getElementById("siswaJamKe").value,
+    status_keterangan: document.getElementById("siswaStatus").value
+  };
+}
+
+// Simpan Manual Offline (Tombol Simpan Catatan HP)
+window.simpanManualOffline = function(type) {
+  let payload = type === 'guru' ? getFormGuruPayload() : getFormSiswaPayload();
+  if (!payload) return;
+
+  saveToLocalStorage(payload);
+  alert("Catatan berhasil disimpan sementara di HP!");
+
+  if (type === 'guru') {
+    document.getElementById("formGuru").reset();
+    document.getElementById("selectGuruMapel").innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
+  } else {
+    document.getElementById("formSiswa").reset();
+  }
+};
+
+// Pengiriman Data ke Apps Script
 async function sendData(payload, action) {
   if (navigator.onLine) {
     try {
@@ -169,16 +236,16 @@ async function sendData(payload, action) {
       });
       const data = await res.json();
       if (data.status === "success") {
-        alert("Laporan berhasil disimpan!");
+        alert("Laporan berhasil terkirim ke Google Spreadsheet!");
         return;
       }
     } catch (e) {
-      console.log("Gagal kirim online, menyimpan ke offline...", e);
+      console.log("Kirim online gagal, menyimpan ke offline...", e);
     }
   }
 
   saveToLocalStorage(payload);
-  alert("Koneksi tersendat. Laporan disimpan offline di HP!");
+  alert("Koneksi tersendat/offline. Catatan tersimpan di HP & siap diupload!");
 }
 
 function saveToLocalStorage(item) {
@@ -204,13 +271,13 @@ function renderOfflineList() {
       list.forEach((item, idx) => {
         let sub = item.tipe === "guru" ? item.nama_guru_mapel : item.nama_siswa;
         html += `
-          <div class="p-2.5 bg-slate-50 border rounded-lg flex justify-between items-center">
+          <div class="p-2 bg-white border border-amber-200 rounded flex justify-between items-center shadow-sm">
             <div>
-              <span class="font-bold text-indigo-600 uppercase text-[10px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
-              <span class="font-medium text-slate-700 ml-1">${sub}</span>
-              <p class="text-[11px] text-slate-500">${item.status || item.status_keterangan} (Jam Ke: ${item.jam_ke})</p>
+              <span class="font-bold text-indigo-700 uppercase text-[9px] px-1 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
+              <span class="font-semibold text-slate-800 ml-1 text-xs">${sub}</span>
+              <p class="text-[10px] text-slate-500">${item.status || item.status_keterangan} (${item.jam_ke})</p>
             </div>
-            <span class="text-[10px] text-slate-400">#${idx + 1}</span>
+            <span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>
           </div>
         `;
       });
@@ -218,21 +285,20 @@ function renderOfflineList() {
     }
   } else {
     if (banner) banner.classList.add("hidden");
-    if (container) container.innerHTML = `<p class="text-slate-400 italic">Tidak ada catatan offline terpending.</p>`;
   }
 }
 
-// Upload Batch Offline
+// Tombol Upload Batch Offline ke Google Spreadsheet
 window.uploadDataOffline = async function() {
   let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
 
   if (list.length === 0) {
-    alert("Tidak ada data offline untuk diunggah.");
+    alert("Tidak ada catatan offline yang tersimpan.");
     return;
   }
 
   const btn = document.getElementById("btnUploadBatch");
-  if(btn) {
+  if (btn) {
     btn.disabled = true;
     btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Mengupload...`;
   }
@@ -256,18 +322,18 @@ window.uploadDataOffline = async function() {
       throw new Error(data.message);
     }
   } catch (err) {
-    alert("Gagal mengunggah data. Pastikan koneksi internet aktif!");
+    alert("Gagal mengunggah. Pastikan koneksi internet aktif!");
     console.error(err);
   } finally {
-    if(btn) {
+    if (btn) {
       btn.disabled = false;
-      btn.innerHTML = `<i class="fa-solid fa-upload"></i> Upload Sekarang`;
+      btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet`;
     }
   }
 };
 
 window.clearOfflineData = function() {
-  if (confirm("Hapus semua catatan offline dari HP?")) {
+  if (confirm("Hapus seluruh daftar catatan offline dari HP?")) {
     localStorage.removeItem("offline_queue");
     renderOfflineList();
   }
