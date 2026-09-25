@@ -1,323 +1,353 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Piket Guru Sekolah</title>
-    
-    <meta name="theme-color" content="#0f172a">
-    
-    <!-- CSS Bootstrap 5 & FontAwesome -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        body { 
-            background-color: #f8fafc; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            padding-bottom: 40px; 
-        }
-        .navbar-custom { 
-            background: #0f172a; 
-            color: white; 
-            border-radius: 0 0 20px 20px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
-        }
-        .card-custom { 
-            border-radius: 16px; 
-            border: 1px solid #e2e8f0; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
-            margin-bottom: 20px; 
-        }
-        .btn-round { 
-            border-radius: 50px; 
-            font-weight: 700; 
-            padding: 12px 20px; 
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Guru Piket</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .card { border-radius: 12px; border: none; }
+    .btn-primary { background-color: #0d6efd; }
+    .badge-delete { cursor: pointer; }
+  </style>
 </head>
-<body>
+<body class="pb-5">
 
-    <!-- NAVBAR ATAS & INDIKATOR KONEKSI -->
-    <nav class="navbar navbar-custom p-3 mb-4">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <span class="fw-bold fs-5"><i class="fa-solid fa-clipboard-user me-2"></i>E-Piket Mobile</span>
-            <span id="status-koneksi" class="badge bg-danger"><i class="fa-solid fa-wifi"></i> Offline</span>
-        </div>
-    </nav>
+  <nav class="navbar navbar-dark bg-dark mb-3">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">E-PIKET SMK YANISBA</span>
+      <button class="btn btn-outline-light btn-sm" onclick="syncMasterData()">🔄 Sync Master</button>
+    </div>
+  </nav>
 
-    <div class="container" style="max-width: 600px;">
+  <div class="container" style="max-width: 600px;">
 
-        <!-- BOKS INFO PETUGAS, TANGGAL & SYNC MASTER -->
-        <div class="card card-custom p-3 bg-white">
-            <div class="row g-2 mb-2">
-                <div class="col-7">
-                    <label class="text-muted small fw-bold">Petugas Piket:</label>
-                    <input type="text" id="nama-petugas" class="form-control form-control-sm fw-bold" placeholder="Nama Anda...">
-                </div>
-                <div class="col-5">
-                    <label class="text-muted small fw-bold">Tanggal:</label>
-                    <input type="date" id="tgl-piket" class="form-control form-control-sm bg-light" readonly>
-                </div>
-            </div>
-            <button onclick="downloadMasterData()" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-1">
-                <i class="fa-solid fa-rotate me-1"></i> Sync Master Data (Siswa & Guru)
-            </button>
-        </div>
-
-        <!-- 1. FORM INPUT ABSEN SISWA -->
-        <div class="card card-custom p-4 bg-white">
-            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-graduate me-2"></i>1. Catat Siswa Bermasalah</h6>
-            
-            <div class="mb-2">
-                <label class="form-label text-muted small">Cari Nama Siswa:</label>
-                <input list="list-siswa" id="input-siswa" class="form-control" placeholder="Ketik nama / kelas siswa...">
-                <datalist id="list-siswa"></datalist>
-            </div>
-
-            <!-- Jam Ke- & Status Siswa -->
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <label class="form-label text-muted small">Pada Jam Ke-:</label>
-                    <select id="jam-siswa" class="form-select">
-                        <option value="Jam ke 1">Jam ke 1</option>
-                        <option value="Jam ke 2">Jam ke 2</option>
-                        <option value="Jam ke 3">Jam ke 3</option>
-                        <option value="Jam ke 4">Jam ke 4</option>
-                        <option value="Jam ke 5">Jam ke 5</option>
-                        <option value="Jam ke 6">Jam ke 6</option>
-                        <option value="Jam ke 7">Jam ke 7</option>
-                        <option value="Jam ke 8">Jam ke 8</option>
-                    </select>
-                </div>
-                <div class="col-6">
-                    <label class="form-label text-muted small">Keterangan:</label>
-                    <select id="status-siswa" class="form-select">
-                        <option value="Alpa">Alpa</option>
-                        <option value="Izin">Izin</option>
-                        <option value="Sakit">Sakit</option>
-                        <option value="Terlambat">Terlambat</option>
-                    </select>
-                </div>
-            </div>
-
-            <button onclick="tambahSiswa()" class="btn btn-primary w-100"><i class="fa-solid fa-plus me-1"></i> Tambah Siswa</button>
-
-            <!-- List Sementara Siswa -->
-            <ul id="daftar-siswa-temp" class="list-group list-group-flush border-top mt-3"></ul>
-        </div>
-
-        <!-- 2. FORM INPUT PEMANTAUAN KELAS / KETEPATAN GURU -->
-        <div class="card card-custom p-4 bg-white">
-            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-chalkboard-user me-2"></i>2. Pemantauan Jam / Kehadiran Guru</h6>
-            
-            <div class="mb-2">
-                <label class="form-label text-muted small">Cari Nama Guru:</label>
-                <input list="list-guru" id="input-guru" class="form-control" placeholder="Ketik nama / mapel guru...">
-                <datalist id="list-guru"></datalist>
-            </div>
-
-            <div class="row g-2 mb-2">
-                <div class="col-6">
-                    <label class="form-label text-muted small">Jam Pelajaran:</label>
-                    <select id="jam-guru" class="form-select">
-                        <option value="Jam ke 1">Jam ke 1</option>
-                        <option value="Jam ke 2">Jam ke 2</option>
-                        <option value="Jam ke 3">Jam ke 3</option>
-                        <option value="Jam ke 4">Jam ke 4</option>
-                        <option value="Jam ke 5">Jam ke 5</option>
-                        <option value="Jam ke 6">Jam ke 6</option>
-                        <option value="Jam ke 7">Jam ke 7</option>
-                        <option value="Jam ke 8">Jam ke 8</option>
-                    </select>
-                </div>
-                <div class="col-6">
-                    <label class="form-label text-muted small">Jam Masuk Kelas (Manual):</label>
-                    <!-- Input jam manual -->
-                    <input type="time" id="waktu-masuk-guru" class="form-control">
-                </div>
-            </div>
-
-            <div class="mb-2">
-                <label class="form-label text-muted small">Status Kehadiran:</label>
-                <select id="status-guru" class="form-select">
-                    <option value="Hadir Tepat Waktu">Hadir Tepat Waktu</option>
-                    <option value="Hadir Terlambat">Hadir Terlambat</option>
-                    <option value="Izin">Izin</option>
-                    <option value="Sakit">Sakit</option>
-                    <option value="Tanpa Keterangan (Kosong)">Tanpa Keterangan (Kosong)</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label text-muted small">Catatan / Materi / Tugas yang Ditinggalkan:</label>
-                <textarea id="tugas-guru" class="form-control" rows="2" placeholder="Contoh: Terlambat 15 menit / Memberi tugas LKS Hal 20..."></textarea>
-            </div>
-
-            <button onclick="tambahGuru()" class="btn btn-danger w-100"><i class="fa-solid fa-plus me-1"></i> Tambah Catatan Guru</button>
-
-            <!-- List Sementara Guru -->
-            <ul id="daftar-guru-temp" class="list-group list-group-flush border-top mt-3"></ul>
-        </div>
-
-        <!-- TOMBOL SIMPAN LOKAL & UPLOAD -->
-        <div class="d-grid gap-2 mt-4">
-            <button onclick="simpanLokal()" class="btn btn-secondary btn-round"><i class="fa-solid fa-floppy-disk me-2"></i>Simpan Draf di HP (Offline)</button>
-            <button onclick="uploadKePusat()" class="btn btn-success btn-round"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload Laporan ke Pusat (Online)</button>
-        </div>
-
+    <!-- TANGGAL & NAMA PETUGAS -->
+    <div class="card p-3 mb-3 shadow-sm">
+      <div class="mb-2">
+        <label class="form-label fw-bold">Tanggal Piket:</label>
+        <input type="date" id="tglPiket" class="form-control">
+      </div>
+      <div>
+        <label class="form-label fw-bold">Nama Petugas Piket:</label>
+        <input type="text" id="namaPetugas" class="form-control" placeholder="Ketik nama Anda...">
+      </div>
     </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxR_LxFxTgDvxF_f3ahzFxCsvsLkhDKvnMXhpYtHks6tOVCHxxtx-q3NsqmluRYIhK2/exec";
+    <!-- 1. CATAT SISWA BERMASALAH / ABSEN -->
+    <div class="card p-3 mb-3 shadow-sm">
+      <h5 class="text-primary fw-bold">1. Catat Siswa Bermasalah / Absen</h5>
+      
+      <div class="mb-2">
+        <label class="form-label">Cari Nama Siswa:</label>
+        <input type="text" id="inputSiswa" class="form-control" list="datalistSiswa" placeholder="Ketik nama / kelas siswa...">
+        <datalist id="datalistSiswa"></datalist>
+      </div>
 
-        let tempSiswa = [];
-        let tempGuru = [];
+      <div class="row">
+        <div class="col-6 mb-2">
+          <label class="form-label">Jam Ke-:</label>
+          <select id="jamSiswa" class="form-control">
+            <option value="Jam ke 1-2">Jam ke 1-2</option>
+            <option value="Jam ke 3-4">Jam ke 3-4</option>
+            <option value="Jam ke 5-6">Jam ke 5-6</option>
+            <option value="Jam ke 7-8">Jam ke 7-8</option>
+            <option value="Seharian">Seharian</option>
+          </select>
+        </div>
+        <div class="col-6 mb-2">
+          <label class="form-label">Keterangan Status:</label>
+          <select id="statusSiswa" class="form-control">
+            <option value="Alpa (Tanpa Keterangan)">Alpa (Tanpa Keterangan)</option>
+            <option value="Izin">Izin</option>
+            <option value="Sakit">Sakit</option>
+            <option value="Terlambat">Terlambat</option>
+            <option value="Cabut / Membolos">Cabut / Membolos</option>
+          </select>
+        </div>
+      </div>
 
-        // Set Tanggal Otomatis Hari Ini
-        document.getElementById('tgl-piket').value = new Date().toISOString().split('T')[0];
+      <button type="button" class="btn btn-primary w-100" onclick="tambahSiswa()">+ Tambah Siswa</button>
 
-        // Set Default Jam Masuk Manual ke Waktu Sekarang (Format HH:MM)
-        const skrg = new Date();
-        const jamStr = String(skrg.getHours()).padStart(2, '0') + ':' + String(skrg.getMinutes()).padStart(2, '0');
-        document.getElementById('waktu-masuk-guru').value = jamStr;
+      <!-- DAFTAR SEMENTARA SISWA -->
+      <ul class="list-group mt-3" id="listSiswaTampil"></ul>
+    </div>
 
-        // DETEKSI KONEKSI
-        window.addEventListener('online', updateStatusKoneksi);
-        window.addEventListener('offline', updateStatusKoneksi);
+    <!-- 2. CATAT GURU TIDAK HADIR -->
+    <div class="card p-3 mb-3 shadow-sm">
+      <h5 class="text-danger fw-bold">2. Catat Guru Tidak Hadir / Tugas</h5>
+      
+      <!-- Cari Nama Guru -->
+      <div class="mb-2">
+        <label class="form-label">Cari Nama Guru:</label>
+        <input type="text" id="inputGuru" class="form-control" list="datalistGuru" oninput="onGuruSelected()" placeholder="Ketik nama guru...">
+        <datalist id="datalistGuru"></datalist>
+      </div>
 
-        function updateStatusKoneksi() {
-            const badge = document.getElementById('status-koneksi');
-            if (navigator.onLine) {
-                badge.className = "badge bg-success";
-                badge.innerHTML = '<i class="fa-solid fa-wifi"></i> Online';
-            } else {
-                badge.className = "badge bg-danger";
-                badge.innerHTML = '<i class="fa-solid fa-wifi"></i> Offline';
-            }
+      <!-- Dropdown Mapel Dinamis -->
+      <div class="mb-2">
+        <label class="form-label">Pilih Mata Pelajaran:</label>
+        <select id="selectMapelGuru" class="form-control">
+          <option value="">-- Pilih Mapel --</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="col-6 mb-2">
+          <label class="form-label">Jam Ke-:</label>
+          <select id="jamGuru" class="form-control">
+            <option value="Jam ke 1-2">Jam ke 1-2</option>
+            <option value="Jam ke 3-4">Jam ke 3-4</option>
+            <option value="Jam ke 5-6">Jam ke 5-6</option>
+            <option value="Jam ke 7-8">Jam ke 7-8</option>
+            <option value="Seharian">Seharian</option>
+          </select>
+        </div>
+        <div class="col-6 mb-2">
+          <label class="form-label">Jam Masuk (Manual):</label>
+          <input type="time" id="jamMasukGuru" class="form-control">
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label">Keterangan Status:</label>
+        <select id="statusGuru" class="form-control">
+          <option value="Izin">Izin</option>
+          <option value="Sakit">Sakit</option>
+          <option value="Alpa">Alpa</option>
+          <option value="Terlambat">Terlambat</option>
+          <option value="Tugas Luar">Tugas Luar</option>
+        </select>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label">Materi & Tugas yang Ditinggalkan:</label>
+        <textarea id="tugasGuru" class="form-control" rows="2" placeholder="Contoh: LKS Halaman 12 Bab 2..."></textarea>
+      </div>
+
+      <button type="button" class="btn btn-danger w-100" onclick="tambahGuru()">+ Tambah Guru</button>
+
+      <!-- DAFTAR SEMENTARA GURU -->
+      <ul class="list-group mt-3" id="listGuruTampil"></ul>
+    </div>
+
+    <!-- TOMBOL SUBMIT LAPORAN -->
+    <button class="btn btn-success btn-lg w-100 shadow" onclick="kirimLaporan()">🚀 UPLOAD LAPORAN KE PUSAT</button>
+
+  </div>
+
+  <script>
+    // URL Web App Google Apps Script Anda
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxR_LxFxTgDvxF_f3ahzFxCsvsLkhDKvnMXhpYtHks6tOVCHxxtx-q3NsqmluRYIhK2/exec";
+
+    let masterSiswa = [];
+    let masterGuru = [];
+    let siswaList = [];
+    let guruList = [];
+
+    // Set Default Tanggal Hari Ini
+    document.getElementById('tglPiket').valueAsDate = new Date();
+
+    // Auto-load Master Data saat halaman dibuka
+    window.onload = function() {
+      const localSiswa = localStorage.getItem('masterSiswa');
+      const localGuru = localStorage.getItem('masterGuru');
+
+      if (localSiswa && localGuru) {
+        masterSiswa = JSON.parse(localSiswa);
+        masterGuru = JSON.parse(localGuru);
+        populateDatalists();
+      } else {
+        syncMasterData();
+      }
+    };
+
+    function syncMasterData() {
+      fetch(`${SCRIPT_URL}?action=get_master`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            masterSiswa = data.siswa;
+            masterGuru = data.guru;
+            localStorage.setItem('masterSiswa', JSON.stringify(masterSiswa));
+            localStorage.setItem('masterGuru', JSON.stringify(masterGuru));
+            populateDatalists();
+            alert('Master Data berhasil diperbarui!');
+          }
+        })
+        .catch(err => alert('Gagal mengambil Master Data. Cek koneksi internet!'));
+    }
+
+    function populateDatalists() {
+      const dlSiswa = document.getElementById('datalistSiswa');
+      const dlGuru = document.getElementById('datalistGuru');
+      dlSiswa.innerHTML = '';
+      dlGuru.innerHTML = '';
+
+      masterSiswa.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = `${s.nama} (${s.kelas})`;
+        dlSiswa.appendChild(opt);
+      });
+
+      masterGuru.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.nama;
+        dlGuru.appendChild(opt);
+      });
+    }
+
+    // FUNGSI UNTUK MENGAMBIL MAPEL BERDASARKAN NAMA GURU YANG DIPILIH
+    function onGuruSelected() {
+      const inputNama = document.getElementById('inputGuru').value.trim();
+      const selectMapel = document.getElementById('selectMapelGuru');
+      selectMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+
+      if (!inputNama) return;
+
+      // Cari guru berdasarkan nama
+      const guruFound = masterGuru.find(g => g.nama.toLowerCase() === inputNama.toLowerCase());
+
+      if (guruFound && guruFound.mapel) {
+        // Memisah mapel berdasarkan tanda koma (contoh: "FARMAKOLOGI, TOI")
+        const listMapel = guruFound.mapel.split(',');
+        
+        listMapel.forEach(mapelText => {
+          const m = mapelText.trim();
+          if (m) {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            selectMapel.appendChild(opt);
+          }
+        });
+
+        // Jika hanya ada 1 mapel, otomatis terpilih
+        if (listMapel.length === 1) {
+          selectMapel.selectedIndex = 1;
         }
+      }
+    }
 
-        // SYNC MASTER DATA
-        async function downloadMasterData() {
-            if (!navigator.onLine) return alert("Harus terhubung ke internet untuk Sync Data!");
-            try {
-                const res = await fetch(`${SCRIPT_URL}?action=get_master`);
-                const data = await res.json();
-                
-                localStorage.setItem('master_siswa', JSON.stringify(data.siswa));
-                localStorage.setItem('master_guru', JSON.stringify(data.guru));
-                
-                loadDatalist();
-                alert("Master Data berhasil diperbarui di HP!");
-            } catch (err) {
-                alert("Gagal mengunduh master data.");
-            }
+    function tambahSiswa() {
+      const nama = document.getElementById('inputSiswa').value.trim();
+      const jam = document.getElementById('jamSiswa').value;
+      const status = document.getElementById('statusSiswa').value;
+
+      if (!nama) { alert('Pilih nama siswa terlebih dahulu!'); return; }
+
+      siswaList.push({ nama, jam, status });
+      renderSiswa();
+      document.getElementById('inputSiswa').value = '';
+    }
+
+    function renderSiswa() {
+      const ul = document.getElementById('listSiswaTampil');
+      ul.innerHTML = '';
+      siswaList.forEach((s, idx) => {
+        ul.innerHTML += `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div><strong>${s.nama}</strong><br><small class="text-muted">${s.jam} | ${s.status}</small></div>
+            <span class="badge bg-danger rounded-pill badge-delete" onclick="hapusSiswa(${idx})">X</span>
+          </li>`;
+      });
+    }
+
+    function hapusSiswa(idx) {
+      siswaList.splice(idx, 1);
+      renderSiswa();
+    }
+
+    function tambahGuru() {
+      const namaGuru = document.getElementById('inputGuru').value.trim();
+      const mapelGuru = document.getElementById('selectMapelGuru').value;
+      const jamKe = document.getElementById('jamGuru').value;
+      const jamMasuk = document.getElementById('jamMasukGuru').value;
+      const status = document.getElementById('statusGuru').value;
+      const tugas = document.getElementById('tugasGuru').value;
+
+      if (!namaGuru) { alert('Ketik atau pilih nama guru terlebih dahulu!'); return; }
+
+      // Gabungkan Nama Guru dan Mapel tanpa tanda kurung kosong
+      let namaTampil = mapelGuru ? `${namaGuru} - ${mapelGuru}` : namaGuru;
+
+      guruList.push({
+        nama: namaTampil,
+        jam: jamKe,
+        waktuMasuk: jamMasuk || '-',
+        status: status,
+        tugas: tugas || '-'
+      });
+
+      renderGuru();
+
+      // Reset Form Input Guru
+      document.getElementById('inputGuru').value = '';
+      document.getElementById('selectMapelGuru').innerHTML = '<option value="">-- Pilih Mapel --</option>';
+      document.getElementById('tugasGuru').value = '';
+      document.getElementById('jamMasukGuru').value = '';
+    }
+
+    function renderGuru() {
+      const ul = document.getElementById('listGuruTampil');
+      ul.innerHTML = '';
+      guruList.forEach((g, idx) => {
+        ul.innerHTML += `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>${g.nama}</strong><br>
+              <small class="text-muted">${g.jam} | Masuk: ${g.waktuMasuk} | ${g.status}</small><br>
+              <small class="text-secondary">Tugas: ${g.tugas}</small>
+            </div>
+            <span class="badge bg-danger rounded-pill badge-delete" onclick="hapusGuru(${idx})">X</span>
+          </li>`;
+      });
+    }
+
+    function hapusGuru(idx) {
+      guruList.splice(idx, 1);
+      renderGuru();
+    }
+
+    function kirimLaporan() {
+      const tglRaw = document.getElementById('tglPiket').value;
+      const petugas = document.getElementById('namaPetugas').value.trim();
+
+      if (!petugas) { alert('Isi Nama Petugas Piket terlebih dahulu!'); return; }
+
+      // Format tanggal ke DD/MM/YYYY
+      const parts = tglRaw.split('-');
+      const tglFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+      const payload = {
+        tanggal: tglFormatted,
+        petugas: petugas,
+        siswaList: siswaList,
+        guruList: guruList
+      };
+
+      if (!confirm('Apakah Anda yakin ingin mengirim laporan harian ini ke Pusat?')) return;
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success') {
+          alert(' Laporan Berhasil Dikirim!');
+          siswaList = [];
+          guruList = [];
+          renderSiswa();
+          renderGuru();
+        } else {
+          alert('Gagal mengirim: ' + res.message);
         }
-
-        function loadDatalist() {
-            const siswa = JSON.parse(localStorage.getItem('master_siswa') || '[]');
-            const guru = JSON.parse(localStorage.getItem('master_guru') || '[]');
-
-            document.getElementById('list-siswa').innerHTML = siswa.map(s => `<option value="${s.nama} (${s.kelas})">`).join('');
-            document.getElementById('list-guru').innerHTML = guru.map(g => `<option value="${g.nama} (${g.mapel})">`).join('');
-        }
-
-        // TAMBAH SISWA SEMENTARA
-        function tambahSiswa() {
-            const nama = document.getElementById('input-siswa').value;
-            const jam = document.getElementById('jam-siswa').value;
-            const status = document.getElementById('status-siswa').value;
-            
-            if(!nama) return alert("Pilih nama siswa terlebih dahulu");
-
-            tempSiswa.push({ nama, jam, status });
-            document.getElementById('input-siswa').value = '';
-            renderTempList();
-        }
-
-        // TAMBAH GURU SEMENTARA
-        function tambahGuru() {
-            const nama = document.getElementById('input-guru').value;
-            const jam = document.getElementById('jam-guru').value;
-            const waktuMasuk = document.getElementById('waktu-masuk-guru').value;
-            const status = document.getElementById('status-guru').value;
-            const tugas = document.getElementById('tugas-guru').value;
-            
-            if(!nama) return alert("Pilih nama guru terlebih dahulu");
-
-            tempGuru.push({ nama, jam, waktuMasuk, status, tugas });
-            document.getElementById('input-guru').value = '';
-            document.getElementById('tugas-guru').value = '';
-            renderTempList();
-        }
-
-        // RENDER LIST SEMENTARA
-        function renderTempList() {
-            document.getElementById('daftar-siswa-temp').innerHTML = tempSiswa.map((s) => 
-                `<li class="list-group-item d-flex justify-content-between align-items-center small py-2">
-                    <div><b>${s.nama}</b> <br><small class="text-muted">${s.jam}</small></div>
-                    <span class="badge bg-warning text-dark">${s.status}</span>
-                </li>`
-            ).join('');
-
-            document.getElementById('daftar-guru-temp').innerHTML = tempGuru.map((g) => 
-                `<li class="list-group-item small py-2">
-                    <b>${g.nama}</b> <br>
-                    <small class="text-muted">${g.jam} | Masuk: <b>${g.waktuMasuk || '-'} WIB</b></small> 
-                    <span class="badge bg-secondary ms-1">${g.status}</span><br>
-                    <i class="text-muted">Catatan: ${g.tugas || '-'}</i>
-                </li>`
-            ).join('');
-        }
-
-        // SIMPAN DRAF LOKAL (OFFLINE)
-        function simpanLokal() {
-            const petugas = document.getElementById('nama-petugas').value;
-            const tanggal = document.getElementById('tgl-piket').value;
-            if(!petugas) return alert("Isi nama Petugas Piket terlebih dahulu!");
-
-            const laporan = { petugas, tanggal, siswaList: tempSiswa, guruList: tempGuru };
-            localStorage.setItem('draf_laporan_piket', JSON.stringify(laporan));
-            alert("Laporan berhasil disimpan sementara di HP!");
-        }
-
-        // UPLOAD KE PUSAT (ONLINE)
-        async function uploadKePusat() {
-            if (!navigator.onLine) return alert("Tidak ada internet! Aktifkan internet untuk upload.");
-
-            const rawData = localStorage.getItem('draf_laporan_piket');
-            const dataToSend = rawData ? JSON.parse(rawData) : {
-                petugas: document.getElementById('nama-petugas').value,
-                tanggal: document.getElementById('tgl-piket').value,
-                siswaList: tempSiswa,
-                guruList: tempGuru
-            };
-
-            if(!dataToSend.petugas) return alert("Nama petugas belum diisi!");
-            if(dataToSend.siswaList.length === 0 && dataToSend.guruList.length === 0) {
-                return alert("Tidak ada data untuk di-upload!");
-            }
-
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(dataToSend)
-                });
-
-                const res = await response.json();
-                if(res.status === 'success') {
-                    alert("ALHAMDULILLAH! Laporan berhasil di-upload!");
-                    localStorage.removeItem('draf_laporan_piket');
-                    tempSiswa = []; tempGuru = [];
-                    renderTempList();
-                }
-            } catch (err) {
-                alert("Gagal meng-upload data.");
-            }
-        }
-
-        updateStatusKoneksi();
-        loadDatalist();
-    </script>
+      })
+      .catch(err => alert('Terjadi kesalahan koneksi saat mengirim data.'));
+    }
+  </script>
 </body>
 </html>
