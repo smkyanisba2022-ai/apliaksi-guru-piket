@@ -11,10 +11,37 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMasterData();
   renderOfflineList();
 
+  // Pasang Listener tombol tab menggunakan event listener murni agar tidak terpicu form submit
+  const btnGuru = document.getElementById("tabBtnGuru");
+  const btnSiswa = document.getElementById("tabBtnSiswa");
+  const btnPantau = document.getElementById("tabBtnPantau");
+
+  if (btnGuru) {
+    btnGuru.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchTab('guru');
+    });
+  }
+
+  if (btnSiswa) {
+    btnSiswa.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchTab('siswa');
+    });
+  }
+
+  if (btnPantau) {
+    btnPantau.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchTab('pantau');
+    });
+  }
+
   window.addEventListener("online", checkOnlineStatus);
   window.addEventListener("offline", checkOnlineStatus);
 });
 
+// 1. FUNGSI WAKTU REALTIME
 function setupRealtimeClock() {
   const el = document.getElementById("tanggalWaktu");
   const update = () => {
@@ -25,6 +52,7 @@ function setupRealtimeClock() {
   setInterval(update, 1000);
 }
 
+// 2. STATUS KONEKSI ONLINE / OFFLINE
 function checkOnlineStatus() {
   const badge = document.getElementById("statusKoneksi");
   if (!badge) return;
@@ -37,8 +65,8 @@ function checkOnlineStatus() {
   }
 }
 
-// 1. FUNGSI PERPINDAHAN TAB (GURU, SISWA, PANTAU)
-window.switchTab = function(tab) {
+// 3. FUNGSI PERPINDAHAN TAB (GURU, SISWA, PANTAU)
+function switchTab(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
   const secP = document.getElementById("sectionPantau");
@@ -47,31 +75,37 @@ window.switchTab = function(tab) {
   const btnS = document.getElementById("tabBtnSiswa");
   const btnP = document.getElementById("tabBtnPantau");
 
-  // Sembunyikan semua tab
-  formG.classList.add("hidden");
-  formS.classList.add("hidden");
-  secP.classList.add("hidden");
+  const defaultBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all cursor-pointer";
+  const activeBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow cursor-pointer";
 
-  // Reset warna tombol
-  btnG.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
-  btnS.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
-  btnP.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+  // Sembunyikan semua elemen
+  if (formG) formG.classList.add("hidden");
+  if (formS) formS.classList.add("hidden");
+  if (secP) secP.classList.add("hidden");
 
+  // Reset kelas tombol
+  if (btnG) btnG.className = defaultBtnClass;
+  if (btnS) btnS.className = defaultBtnClass;
+  if (btnP) btnP.className = defaultBtnClass;
+
+  // Aktifkan tab pilihan
   if (tab === 'guru') {
-    formG.classList.remove("hidden");
-    btnG.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
+    if (formG) formG.classList.remove("hidden");
+    if (btnG) btnG.className = activeBtnClass;
   } else if (tab === 'siswa') {
-    formS.classList.remove("hidden");
-    btnS.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
+    if (formS) formS.classList.remove("hidden");
+    if (btnS) btnS.className = activeBtnClass;
   } else if (tab === 'pantau') {
-    secP.classList.remove("hidden");
-    btnP.className = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow";
-    loadDataPantau(); // Ambil data saat tab pantau diklik
+    if (secP) secP.classList.remove("hidden");
+    if (btnP) btnP.className = activeBtnClass;
+    
+    // Panggil data rekapitulasi monitoring
+    loadDataPantau();
   }
-};
+}
 
-// 2. FUNGSI UNTUK MEMUAT DATA MONITORING UNTUK KEPALA SEKOLAH
-window.loadDataPantau = async function() {
+// 4. MEMUAT DATA LAPORAN UNTUK TAB PANTAU
+async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
 
@@ -103,7 +137,7 @@ window.loadDataPantau = async function() {
           </thead>
           <tbody class="bg-white">`;
 
-        // Tampilkan dari data yang paling baru dimasukkan (Urutan terbalik)
+        // Mengurutkan dari laporan terbaru (index terbesar)
         for (let i = data.guru.length - 1; i >= 1; i--) {
           const row = data.guru[i];
           html += `<tr class="border-b hover:bg-slate-50">
@@ -158,9 +192,9 @@ window.loadDataPantau = async function() {
   } catch (err) {
     container.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">Gagal mengambil data laporan. Pastikan koneksi terhubung.</p>`;
   }
-};
+}
 
-// --- FUNGSI OFFLINE & KONTROL ITEM (DARI PANDUAN SEBELUMNYA) ---
+// 5. OFFLINE STORAGE & SINKRONISASI
 window.toggleOfflineVisibility = function() {
   const wrapper = document.getElementById("offlineContentWrapper");
   const txt = document.getElementById("txtToggleList");
