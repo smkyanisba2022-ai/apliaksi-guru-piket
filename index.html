@@ -29,10 +29,10 @@
           <i class="fa-solid fa-box-archive"></i>
           <span id="offlineCountText">0 Catatan Tersimpan di HP</span>
         </div>
-        <button onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
+        <button type="button" onclick="clearOfflineData()" class="text-xs text-rose-600 hover:underline">Hapus</button>
       </div>
       <div id="offlineListContainer" class="max-h-28 overflow-y-auto space-y-1 text-xs mb-3"></div>
-      <button id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
+      <button type="button" id="btnUploadBatch" onclick="uploadDataOffline()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-2 shadow">
         <i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet
       </button>
     </div>
@@ -53,10 +53,10 @@
 
     <!-- Navigasi Tab -->
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
-      <button id="tabBtnGuru" onclick="switchTab('guru')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow">
+      <button type="button" id="tabBtnGuru" onclick="switchTab('guru')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg transition-all bg-indigo-600 text-white shadow">
         <i class="fa-solid fa-chalkboard-user mr-1"></i> Izin Guru
       </button>
-      <button id="tabBtnSiswa" onclick="switchTab('siswa')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
+      <button type="button" id="tabBtnSiswa" onclick="switchTab('siswa')" class="flex-1 py-2.5 text-center font-semibold text-sm rounded-lg text-slate-600 hover:bg-slate-100 transition-all">
         <i class="fa-solid fa-user-graduate mr-1"></i> Izin Siswa
       </button>
     </div>
@@ -67,14 +67,16 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Guru
       </h2>
 
-      <!-- Nama Guru (Datalist Autocomplete) -->
+      <!-- Cari & Pilih Nama Guru -->
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Guru <span class="text-rose-500">*</span></label>
-        <input type="text" id="inputNamaGuru" list="listGuru" oninput="onGuruChanged()" placeholder="Ketik nama guru..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
-        <datalist id="listGuru"></datalist>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Cari / Pilih Nama Guru <span class="text-rose-500">*</span></label>
+        <input type="text" id="searchGuru" oninput="filterGuruList()" placeholder="🔍 Ketik nama guru untuk memfilter..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs mb-1 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+        <select id="selectGuru" onchange="onGuruSelectChanged()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Memuat Data Guru... --</option>
+        </select>
       </div>
 
-      <!-- Mapel (Otomatis menyesuaikan guru) -->
+      <!-- Mapel Guru -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
         <select id="selectGuruMapel" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -82,7 +84,7 @@
         </select>
       </div>
 
-      <!-- Jam Ke (Dropdown 1-9) -->
+      <!-- Jam Ke (1-9) -->
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
@@ -105,7 +107,7 @@
         </div>
       </div>
 
-      <!-- Status Ketidakhadiran -->
+      <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Keterangan <span class="text-rose-500">*</span></label>
         <select id="guruStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -118,13 +120,13 @@
         </select>
       </div>
 
-      <!-- Tugas / Materi -->
+      <!-- Tugas -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Tugas / Catatan Materi</label>
         <textarea id="guruTugas" rows="2" placeholder="Catatan tugas yang ditinggalkan..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
       </div>
 
-      <!-- Action Buttons Guru -->
+      <!-- Tombol Aksi -->
       <div class="pt-2 grid grid-cols-2 gap-2">
         <button type="button" onclick="simpanManualOffline('guru')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
           <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
@@ -141,14 +143,16 @@
         <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Catatan Ketidakhadiran / Izin Siswa
       </h2>
 
-      <!-- Nama Siswa (Datalist Autocomplete) -->
+      <!-- Cari & Pilih Nama Siswa -->
       <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Siswa <span class="text-rose-500">*</span></label>
-        <input type="text" id="inputNamaSiswa" list="listSiswa" placeholder="Ketik nama siswa..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
-        <datalist id="listSiswa"></datalist>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Cari / Pilih Nama Siswa <span class="text-rose-500">*</span></label>
+        <input type="text" id="searchSiswa" oninput="filterSiswaList()" placeholder="🔍 Ketik nama siswa untuk memfilter..." class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs mb-1 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50">
+        <select id="selectSiswa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
+          <option value="">-- Memuat Data Siswa... --</option>
+        </select>
       </div>
 
-      <!-- Jam Ke (Dropdown 1-9) -->
+      <!-- Jam Ke (1-9) -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Ke- <span class="text-rose-500">*</span></label>
         <select id="siswaJamKe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -165,7 +169,7 @@
         </select>
       </div>
 
-      <!-- Status Keterangan Siswa -->
+      <!-- Status -->
       <div>
         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Alasan <span class="text-rose-500">*</span></label>
         <select id="siswaStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -178,7 +182,7 @@
         </select>
       </div>
 
-      <!-- Action Buttons Siswa -->
+      <!-- Tombol Aksi -->
       <div class="pt-2 grid grid-cols-2 gap-2">
         <button type="button" onclick="simpanManualOffline('siswa')" class="w-full py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow">
           <i class="fa-solid fa-floppy-disk"></i> Simpan (Offline)
