@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   checkOnlineStatus();
   loadMasterData();
   renderOfflineList();
+  setupToggleListener();
 
   window.addEventListener("online", checkOnlineStatus);
   window.addEventListener("offline", checkOnlineStatus);
@@ -37,6 +38,30 @@ function checkOnlineStatus() {
   }
 }
 
+// Event Listener khusus Tombol Sembunyikan / Tampilkan
+function setupToggleListener() {
+  const btnToggle = document.getElementById("btnToggleList");
+  if (btnToggle) {
+    btnToggle.addEventListener("click", () => {
+      const wrapper = document.getElementById("offlineContentWrapper");
+      const txt = document.getElementById("txtToggleList");
+      const icon = document.getElementById("iconToggleList");
+
+      isOfflineListMinimized = !isOfflineListMinimized;
+
+      if (isOfflineListMinimized) {
+        wrapper.classList.add("hidden");
+        txt.innerText = "Tampilkan";
+        icon.className = "fa-solid fa-chevron-down text-[10px]";
+      } else {
+        wrapper.classList.remove("hidden");
+        txt.innerText = "Sembunyikan";
+        icon.className = "fa-solid fa-chevron-up text-[10px]";
+      }
+    });
+  }
+}
+
 window.switchTab = function(tab) {
   const formG = document.getElementById("formGuru");
   const formS = document.getElementById("formSiswa");
@@ -56,7 +81,6 @@ window.switchTab = function(tab) {
   }
 };
 
-// Ambil Master Data
 async function loadMasterData() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=get_master`);
@@ -219,7 +243,6 @@ window.handleSubmitedSiswa = async function(e) {
   e.target.reset();
 };
 
-// Kirim Data dengan Penanganan CORS Google Apps Script
 async function sendData(payload, action) {
   if (navigator.onLine) {
     try {
@@ -247,25 +270,6 @@ function saveToLocalStorage(item) {
   renderOfflineList();
 }
 
-// Fungsi Minimize / Expand List Catatan Offline
-window.toggleOfflineList = function() {
-  const wrapper = document.getElementById("offlineContentWrapper");
-  const txt = document.getElementById("txtToggleList");
-  const icon = document.getElementById("iconToggleList");
-
-  isOfflineListMinimized = !isOfflineListMinimized;
-
-  if (isOfflineListMinimized) {
-    wrapper.classList.add("hidden");
-    txt.innerText = "Tampilkan";
-    icon.className = "fa-solid fa-chevron-down";
-  } else {
-    wrapper.classList.remove("hidden");
-    txt.innerText = "Sembunyikan";
-    icon.className = "fa-solid fa-chevron-up";
-  }
-};
-
 function renderOfflineList() {
   const banner = document.getElementById("offlineBanner");
   const textCount = document.getElementById("offlineCountText");
@@ -282,13 +286,20 @@ function renderOfflineList() {
       list.forEach((item, idx) => {
         let sub = item.tipe === "guru" ? item.nama_guru_mapel : item.nama_siswa;
         html += `
-          <div class="p-2 bg-white border border-amber-200 rounded flex justify-between items-center shadow-sm">
-            <div>
-              <span class="font-bold text-indigo-700 uppercase text-[9px] px-1 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
-              <span class="font-semibold text-slate-800 ml-1 text-xs">${sub}</span>
+          <div class="p-2 bg-white border border-amber-200 rounded-lg flex justify-between items-center shadow-sm hover:border-amber-300 transition-all">
+            <div class="overflow-hidden mr-2">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="font-bold text-indigo-700 uppercase text-[9px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 rounded">${item.tipe}</span>
+                <span class="font-semibold text-slate-800 text-xs truncate">${sub}</span>
+              </div>
               <p class="text-[10px] text-slate-500">${item.status || item.status_keterangan} (${item.jam_ke})</p>
             </div>
-            <span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>
+              <button type="button" onclick="deleteSingleOfflineItem(${idx})" title="Hapus catatan ini" class="p-1 text-slate-400 hover:text-rose-600 transition-colors">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </div>
           </div>
         `;
       });
@@ -298,6 +309,24 @@ function renderOfflineList() {
     if (banner) banner.classList.add("hidden");
   }
 }
+
+// Hapus Single Item
+window.deleteSingleOfflineItem = function(index) {
+  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
+  if (index >= 0 && index < list.length) {
+    list.splice(index, 1);
+    localStorage.setItem("offline_queue", JSON.stringify(list));
+    renderOfflineList();
+  }
+};
+
+// Hapus Semua Data
+window.clearAllOfflineData = function() {
+  if (confirm("Hapus seluruh daftar catatan offline dari HP?")) {
+    localStorage.removeItem("offline_queue");
+    renderOfflineList();
+  }
+};
 
 // Upload Batch Offline
 window.uploadDataOffline = async function() {
@@ -336,12 +365,5 @@ window.uploadDataOffline = async function() {
       btn.disabled = false;
       btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Upload Sekarang ke Spreadsheet`;
     }
-  }
-};
-
-window.clearOfflineData = function() {
-  if (confirm("Hapus seluruh daftar catatan offline dari HP?")) {
-    localStorage.removeItem("offline_queue");
-    renderOfflineList();
   }
 };
