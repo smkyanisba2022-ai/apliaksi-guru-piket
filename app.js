@@ -1,4 +1,4 @@
-const SCRIPT_URL = "PASANG_URL_WEB_APP_HASIL_DEPLOY_BARU_DI_SINI";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwq-HpB0p5RbDaoK54hWx69quZ231B9xYCz_FCf0GgwoET-XYfWOAXS4ZOxi-wx7_iU/exec";
 
 // 1. FUNGSI SWITCH TAB
 window.switchTab = function(e, tab) {
