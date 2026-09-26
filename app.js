@@ -346,7 +346,7 @@ window.simpanGuruOffline = function() {
   const jamKe = document.getElementById("guruJamKe").value;
 
   if (!petugas || !namaGuru || !mapel || !jamKe) {
-    alert("Harap lengkapi Petugas Piket, Guru, Mapel, dan Jam Ke!");
+    alert("Harap lengkapi Kolom Petugas Piket, Guru, Mapel, dan Jam");
     return;
   }
 
