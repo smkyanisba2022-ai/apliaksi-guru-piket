@@ -157,7 +157,7 @@ window.switchTab = function(e, tab) {
   }
 };
 
-// 4. MEMUAT DATA MASTER DARI SPREADSHEET
+// 4. MEMUAT DATA MASTER
 async function loadMasterData() {
   const statusG = document.getElementById("statusLoadGuru");
   const statusS = document.getElementById("statusLoadSiswa");
