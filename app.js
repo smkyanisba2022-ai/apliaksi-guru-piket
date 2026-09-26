@@ -240,7 +240,7 @@ function saveToOfflineQueue(item) {
   offlineQueue.push(item);
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
-  alert("Catatan berhasil disimpan ke Offline Queue!");
+  alert("Catatan berhasil disimpan Offline!");
 }
 
 function renderOfflineQueue() {
