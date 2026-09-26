@@ -5,7 +5,7 @@ let masterSiswa = [];
 let masterGuru = [];
 let isOfflineListMinimized = false;
 
-// 1. FUNGSI SWITCH TAB (Ditaruh paling atas agar langsung siap diakses HTML)
+// FUNGSI PERPINDAHAN TAB
 window.switchTab = function(e, tab) {
   if (e) {
     e.preventDefault();
@@ -23,29 +23,31 @@ window.switchTab = function(e, tab) {
   const defaultBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all cursor-pointer";
   const activeBtnClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow cursor-pointer";
 
-  // Sembunyikan semua section
-  if (formG) formG.classList.add("hidden");
-  if (formS) formS.classList.add("hidden");
-  if (secP) secP.classList.add("hidden");
+  // Sembunyikan semua elemen menggunakan display
+  if (formG) formG.style.display = "none";
+  if (formS) formS.style.display = "none";
+  if (secP) secP.style.display = "none";
 
-  // Reset tampilan kelas tombol
+  // Reset tampilan tombol
   if (btnG) btnG.className = defaultBtnClass;
   if (btnS) btnS.className = defaultBtnClass;
   if (btnP) btnP.className = defaultBtnClass;
 
   // Tampilkan tab yang dipilih
   if (tab === 'guru') {
-    if (formG) formG.classList.remove("hidden");
+    if (formG) formG.style.display = "block";
     if (btnG) btnG.className = activeBtnClass;
   } else if (tab === 'siswa') {
-    if (formS) formS.classList.remove("hidden");
+    if (formS) formS.style.display = "block";
     if (btnS) btnS.className = activeBtnClass;
   } else if (tab === 'pantau') {
-    if (secP) secP.classList.remove("hidden");
+    if (secP) secP.style.display = "block";
     if (btnP) btnP.className = activeBtnClass;
     
     // Panggil data rekapitulasi monitoring
-    loadDataPantau();
+    if (typeof loadDataPantau === "function") {
+      loadDataPantau();
+    }
   }
 };
 
