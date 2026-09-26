@@ -329,7 +329,7 @@ window.syncOfflineData = async function(e) {
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
 
-  setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", false, "Mengunggah...", "Upload Semua ke Spreadsheet");
+  setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", false, "Mengunggah...", "Upload Semua ke Pusat");
 
   alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
 
