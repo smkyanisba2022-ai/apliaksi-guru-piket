@@ -1,8 +1,4 @@
-// GANTI DENGAN URL WEB APP HASIL DEPLOY BARU
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNvQXcypmUlXTgQAClC5-5c198IaeiHPoCT081vYo4uX5fd8qVJfdDkr0_jwe0-k4Y/exec";
-
-let masterSiswa = [];
-let masterGuru = [];
+const SCRIPT_URL = "PASANG_URL_WEB_APP_HASIL_DEPLOY_BARU_DI_SINI";
 
 // 1. FUNGSI SWITCH TAB
 window.switchTab = function(e, tab) {
@@ -43,39 +39,24 @@ window.switchTab = function(e, tab) {
   }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupRealtimeClock();
-  checkOnlineStatus();
-  loadMasterData();
-  renderOfflineList();
-
-  window.addEventListener("online", checkOnlineStatus);
-  window.addEventListener("offline", checkOnlineStatus);
-});
-
-function setupRealtimeClock() {
-  const el = document.getElementById("tanggalWaktu");
-  const update = () => {
-    const now = new Date();
-    if (el) el.value = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
-  };
-  update();
-  setInterval(update, 1000);
-}
-
-function checkOnlineStatus() {
-  const badge = document.getElementById("statusKoneksi");
-  if (!badge) return;
-  if (navigator.onLine) {
-    badge.className = "px-2.5 py-1 text-xs rounded-full bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
-    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online`;
-  } else {
-    badge.className = "px-2.5 py-1 text-xs rounded-full bg-rose-500 text-white font-medium flex items-center gap-1.5 shadow-sm";
-    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white"></span> Offline`;
+// FUNGSI MEMBERSIHKAN FORMAT JAM ISO (SEPERTI 1899-12-30T...)
+function formatJamDisplay(val) {
+  if (!val || val === '-') return '-';
+  var str = val.toString();
+  if (str.includes('T') && str.includes('Z')) {
+    try {
+      var d = new Date(str);
+      var jam = String(d.getHours()).padStart(2, '0');
+      var menit = String(d.getMinutes()).padStart(2, '0');
+      return jam + ":" + menit;
+    } catch(e) {
+      return str;
+    }
   }
+  return str;
 }
 
-// 2. AMBIL DATA REKAP & SIMPAN KE PANTAU
+// 2. AMBIL DATA DARI SPREADSHEET & RENDER REKAP
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
@@ -91,16 +72,7 @@ async function loadDataPantau() {
     const data = await res.json();
 
     if (data.status === 'success') {
-      let html = "";
-
-      // Tombol Cetak PDF
-      html += `
-      <div class="flex justify-end mb-3">
-        <button type="button" onclick="exportToPDF()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
-          <i class="fa-solid fa-file-pdf"></i> Simpan Rekap PDF
-        </button>
-      </div>
-      <div id="pdfExportArea" class="space-y-4">`;
+      let html = `<div class="space-y-4">`;
 
       // --- TABEL REKAP GURU ---
       const totalGuru = data.guru && data.guru.length > 1 ? data.guru.length - 1 : 0;
@@ -124,26 +96,27 @@ async function loadDataPantau() {
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2 border-r">Tanggal/Waktu</th>
+                <th class="p-2 border-r">Waktu</th>
                 <th class="p-2 border-r">Petugas Piket</th>
                 <th class="p-2 border-r">Guru & Mapel</th>
                 <th class="p-2 border-r text-center">Jam Ke</th>
                 <th class="p-2 border-r text-center">Jam Masuk</th>
                 <th class="p-2 border-r text-center">Status</th>
-                <th class="p-2">Tugas/Materi</th>
+                <th class="p-2">Tugas / Materi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
 
         for (let i = data.guru.length - 1; i >= 1; i--) {
           const r = data.guru[i];
+          const jamClean = formatJamDisplay(r[4]);
           html += `
             <tr class="hover:bg-slate-50 transition-colors">
               <td class="p-2 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
               <td class="p-2 border-r font-medium text-slate-800">${r[1] || '-'}</td>
               <td class="p-2 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
               <td class="p-2 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2 border-r text-center whitespace-nowrap text-slate-500">${r[4] || '-'}</td>
+              <td class="p-2 border-r text-center whitespace-nowrap font-medium text-slate-700">${jamClean}</td>
               <td class="p-2 border-r text-center whitespace-nowrap">
                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[10px]">${r[5] || '-'}</span>
               </td>
@@ -178,7 +151,7 @@ async function loadDataPantau() {
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2 border-r">Tanggal/Waktu</th>
+                <th class="p-2 border-r">Waktu</th>
                 <th class="p-2 border-r">Petugas Piket</th>
                 <th class="p-2 border-r">Siswa & Kelas</th>
                 <th class="p-2 border-r text-center">Jam Ke</th>
@@ -204,7 +177,7 @@ async function loadDataPantau() {
       } else {
         html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Belum ada laporan siswa.</p>`;
       }
-      html += `</div></div>`; // Tutup pdfExportArea
+      html += `</div></div>`;
 
       container.innerHTML = html;
     }
@@ -213,13 +186,13 @@ async function loadDataPantau() {
   }
 }
 
-// 3. FITUR EXPORT REKAP KE PDF
+// 3. FUNGSI EKSPOR KE PDF
 window.exportToPDF = function() {
   const element = document.getElementById('pdfExportArea');
   if (!element) return;
 
   const opt = {
-    margin:       10,
+    margin:       8,
     filename:     `Rekap_Piket_${new Date().toISOString().slice(0,10)}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  { scale: 2 },
@@ -283,107 +256,17 @@ window.handleSubmitedSiswa = async function(e) {
   e.target.reset();
 };
 
-// FUNGSI UTAMA KIRIM DATA SECARA ONLINE / OFFLINE
+// FUNGSI UTAMA KIRIM DATA
 async function sendDataToServer(payload) {
-  if (navigator.onLine) {
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify(payload)
-      });
-      alert("Laporan berhasil tersimpan ke Google Spreadsheet!");
-      return;
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  // Simpan Offline jika koneksi gagal
-  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
-  list.push(payload);
-  localStorage.setItem("offline_queue", JSON.stringify(list));
-  alert("Data tersimpan sementara di memori offline HP/Laptop!");
-  renderOfflineList();
-}
-
-// 5. MASTER DATA & OFFLINE QUEUE
-async function loadMasterData() {
   try {
-    const res = await fetch(`${SCRIPT_URL}?action=get_master`);
-    const data = await res.json();
-    if (data.status === 'success') {
-      masterSiswa = data.siswa || [];
-      masterGuru = data.guru || [];
-      localStorage.setItem("cache_siswa", JSON.stringify(masterSiswa));
-      localStorage.setItem("cache_guru", JSON.stringify(masterGuru));
-      renderDropdowns();
-    }
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    });
+    alert("Laporan berhasil dikirim ke Google Spreadsheet!");
   } catch (err) {
-    masterSiswa = JSON.parse(localStorage.getItem("cache_siswa")) || [];
-    masterGuru = JSON.parse(localStorage.getItem("cache_guru")) || [];
-    renderDropdowns();
-  }
-}
-
-function renderDropdowns() {
-  const selectGuru = document.getElementById("selectGuru");
-  if (selectGuru) {
-    let html = '<option value="">-- Pilih Nama Guru --</option>';
-    masterGuru.forEach(g => {
-      let n = g.NAMA || g.Nama || g.nama;
-      if (n) html += `<option value="${n}">${n}</option>`;
-    });
-    selectGuru.innerHTML = html;
-  }
-
-  const selectSiswa = document.getElementById("selectSiswa");
-  if (selectSiswa) {
-    let html = '<option value="">-- Pilih Nama Siswa --</option>';
-    masterSiswa.forEach(s => {
-      let n = s.NAMA || s.Nama || s.nama;
-      let k = s.KELAS || s.Kelas || s.kelas || '';
-      if (n) html += `<option value="${n}${k ? ' - ' + k : ''}">${n}${k ? ' - ' + k : ''}</option>`;
-    });
-    selectSiswa.innerHTML = html;
-  }
-}
-
-window.onGuruSelectChanged = function() {
-  const selectedNama = document.getElementById("selectGuru").value;
-  const selectMapel = document.getElementById("selectGuruMapel");
-
-  if (!selectedNama) {
-    selectMapel.innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
-    return;
-  }
-
-  const guruObj = masterGuru.find(g => (g.NAMA || g.Nama || g.nama) === selectedNama);
-  if (guruObj) {
-    let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
-    if (mapelStr) {
-      let listMapel = mapelStr.toString().split(',').map(m => m.trim()).filter(m => m !== '');
-      let html = '<option value="">-- Pilih Mapel --</option>';
-      listMapel.forEach(m => { html += `<option value="${m}">${m}</option>`; });
-      selectMapel.innerHTML = html;
-    } else {
-      selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
-    }
-  } else {
-    selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
-  }
-};
-
-function renderOfflineList() {
-  const banner = document.getElementById("offlineBanner");
-  const textCount = document.getElementById("offlineCountText");
-  let list = JSON.parse(localStorage.getItem("offline_queue")) || [];
-
-  if (list.length > 0) {
-    if (banner) banner.classList.remove("hidden");
-    if (textCount) textCount.innerText = `${list.length} Catatan Tersimpan di HP`;
-  } else {
-    if (banner) banner.classList.add("hidden");
+    alert("Gagal mengirim data. Pastikan koneksi internet terhubung.");
   }
 }
