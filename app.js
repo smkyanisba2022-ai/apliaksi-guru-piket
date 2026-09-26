@@ -1,6 +1,9 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwq-HpB0p5RbDaoK54hWx69quZ231B9xYCz_FCf0GgwoET-XYfWOAXS4ZOxi-wx7_iU/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzf7oLwjEBSdThLXDKM4CcRf288y3mwjMi_Qpj21YPtuTB9HIoD8EnjVaeT4R-p20Oq/exec";
 
-// 1. FUNGSI SWITCH TAB
+let masterSiswa = [];
+let masterGuru = [];
+
+// 1. FUNGSI SWITCH TAB (DIPASTIKAN BERJALAN MULUS)
 window.switchTab = function(e, tab) {
   if (e) {
     e.preventDefault();
@@ -15,7 +18,7 @@ window.switchTab = function(e, tab) {
   const btnS = document.getElementById("tabBtnSiswa");
   const btnP = document.getElementById("tabBtnPantau");
 
-  const defaultClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-100 transition-all cursor-pointer";
+  const defaultClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg text-slate-600 hover:bg-slate-200 transition-all cursor-pointer";
   const activeClass = "flex-1 py-2 text-center font-semibold text-xs rounded-lg bg-indigo-600 text-white shadow cursor-pointer";
 
   if (formG) formG.style.display = "none";
@@ -39,16 +42,20 @@ window.switchTab = function(e, tab) {
   }
 };
 
-// FUNGSI MEMBERSIHKAN FORMAT JAM ISO (SEPERTI 1899-12-30T...)
-function formatJamDisplay(val) {
+document.addEventListener("DOMContentLoaded", () => {
+  loadMasterData();
+});
+
+// MEMBERSHKAN BILA MASIH ADA TAMPILAN FORMAT JAM ISO DARI DATA LAMA
+function cleanJamDisplay(val) {
   if (!val || val === '-') return '-';
-  var str = val.toString();
+  let str = val.toString();
   if (str.includes('T') && str.includes('Z')) {
     try {
-      var d = new Date(str);
-      var jam = String(d.getHours()).padStart(2, '0');
-      var menit = String(d.getMinutes()).padStart(2, '0');
-      return jam + ":" + menit;
+      let d = new Date(str);
+      let jam = String(d.getHours()).padStart(2, '0');
+      let menit = String(d.getMinutes()).padStart(2, '0');
+      return `${jam}:${menit}`;
     } catch(e) {
       return str;
     }
@@ -56,7 +63,7 @@ function formatJamDisplay(val) {
   return str;
 }
 
-// 2. AMBIL DATA DARI SPREADSHEET & RENDER REKAP
+// 2. MEMUAT DATA LAPORAN UNTUK TAB PANTAU
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
@@ -96,31 +103,30 @@ async function loadDataPantau() {
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2 border-r">Waktu</th>
-                <th class="p-2 border-r">Petugas Piket</th>
-                <th class="p-2 border-r">Guru & Mapel</th>
-                <th class="p-2 border-r text-center">Jam Ke</th>
-                <th class="p-2 border-r text-center">Jam Masuk</th>
-                <th class="p-2 border-r text-center">Status</th>
-                <th class="p-2">Tugas / Materi</th>
+                <th class="p-2.5 border-r">Waktu</th>
+                <th class="p-2.5 border-r">Petugas Piket</th>
+                <th class="p-2.5 border-r">Guru & Mapel</th>
+                <th class="p-2.5 border-r text-center">Jam Ke</th>
+                <th class="p-2.5 border-r text-center">Jam Masuk</th>
+                <th class="p-2.5 border-r text-center">Status</th>
+                <th class="p-2.5">Tugas / Materi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
 
         for (let i = data.guru.length - 1; i >= 1; i--) {
           const r = data.guru[i];
-          const jamClean = formatJamDisplay(r[4]);
           html += `
             <tr class="hover:bg-slate-50 transition-colors">
-              <td class="p-2 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
-              <td class="p-2 border-r font-medium text-slate-800">${r[1] || '-'}</td>
-              <td class="p-2 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
-              <td class="p-2 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2 border-r text-center whitespace-nowrap font-medium text-slate-700">${jamClean}</td>
-              <td class="p-2 border-r text-center whitespace-nowrap">
+              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
+              <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
+              <td class="p-2.5 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap font-medium text-slate-700">${cleanJamDisplay(r[4])}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">
                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[10px]">${r[5] || '-'}</span>
               </td>
-              <td class="p-2 text-slate-600">${r[6] || '-'}</td>
+              <td class="p-2.5 text-slate-600">${r[6] || '-'}</td>
             </tr>`;
         }
         html += `</tbody></table></div>`;
@@ -151,11 +157,11 @@ async function loadDataPantau() {
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2 border-r">Waktu</th>
-                <th class="p-2 border-r">Petugas Piket</th>
-                <th class="p-2 border-r">Siswa & Kelas</th>
-                <th class="p-2 border-r text-center">Jam Ke</th>
-                <th class="p-2 text-center">Keterangan</th>
+                <th class="p-2.5 border-r">Waktu</th>
+                <th class="p-2.5 border-r">Petugas Piket</th>
+                <th class="p-2.5 border-r">Siswa & Kelas</th>
+                <th class="p-2.5 border-r text-center">Jam Ke</th>
+                <th class="p-2.5 text-center">Keterangan</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
@@ -164,11 +170,11 @@ async function loadDataPantau() {
           const r = data.siswa[i];
           html += `
             <tr class="hover:bg-slate-50 transition-colors">
-              <td class="p-2 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
-              <td class="p-2 border-r font-medium text-slate-800">${r[1] || '-'}</td>
-              <td class="p-2 border-r font-semibold text-slate-900">${r[2] || '-'}</td>
-              <td class="p-2 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2 text-center whitespace-nowrap">
+              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
+              <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
+              <td class="p-2.5 border-r font-semibold text-slate-900">${r[2] || '-'}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
+              <td class="p-2.5 text-center whitespace-nowrap">
                 <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-semibold text-[10px]">${r[4] || '-'}</span>
               </td>
             </tr>`;
@@ -186,23 +192,7 @@ async function loadDataPantau() {
   }
 }
 
-// 3. FUNGSI EKSPOR KE PDF
-window.exportToPDF = function() {
-  const element = document.getElementById('pdfExportArea');
-  if (!element) return;
-
-  const opt = {
-    margin:       8,
-    filename:     `Rekap_Piket_${new Date().toISOString().slice(0,10)}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-  };
-
-  html2pdf().set(opt).from(element).save();
-};
-
-// 4. PENANGANAN SUBMIT FORM
+// 3. FUNGSI SUBMIT FORM
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
   const petugas = document.getElementById("petugasPiket").value.trim();
@@ -212,7 +202,7 @@ window.handleSubmitedGuru = async function(e) {
   const status = document.getElementById("guruStatus").value;
 
   if (!petugas || !namaGuru || !mapel || !jamKe || !status) {
-    alert("Harap lengkapi semua isian Form Guru!");
+    alert("Harap isi Petugas Piket dan semua kelengkapan Form Guru!");
     return;
   }
 
@@ -239,7 +229,7 @@ window.handleSubmitedSiswa = async function(e) {
   const status = document.getElementById("siswaStatus").value;
 
   if (!petugas || !namaSiswa || !jamKe || !status) {
-    alert("Harap lengkapi semua isian Form Siswa!");
+    alert("Harap isi Petugas Piket dan semua kelengkapan Form Siswa!");
     return;
   }
 
@@ -256,7 +246,7 @@ window.handleSubmitedSiswa = async function(e) {
   e.target.reset();
 };
 
-// FUNGSI UTAMA KIRIM DATA
+// KIRIM DATA KE GOOGLE APPS SCRIPT
 async function sendDataToServer(payload) {
   try {
     await fetch(SCRIPT_URL, {
@@ -265,8 +255,71 @@ async function sendDataToServer(payload) {
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload)
     });
-    alert("Laporan berhasil dikirim ke Google Spreadsheet!");
+    alert("Laporan berhasil tersimpan ke Google Spreadsheet!");
   } catch (err) {
-    alert("Gagal mengirim data. Pastikan koneksi internet terhubung.");
+    alert("Gagal menyimpan data ke server. Pastikan URL Web App sudah benar.");
   }
 }
+
+// 4. MEMUAT DATA MASTER DARI SPREADSHEET
+async function loadMasterData() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=get_master`);
+    const data = await res.json();
+    if (data.status === 'success') {
+      masterSiswa = data.siswa || [];
+      masterGuru = data.guru || [];
+      renderDropdowns();
+    }
+  } catch (err) {
+    console.log("Gagal memuat master data");
+  }
+}
+
+function renderDropdowns() {
+  const selectGuru = document.getElementById("selectGuru");
+  if (selectGuru) {
+    let html = '<option value="">-- Pilih Nama Guru --</option>';
+    masterGuru.forEach(g => {
+      let n = g.NAMA || g.Nama || g.nama;
+      if (n) html += `<option value="${n}">${n}</option>`;
+    });
+    selectGuru.innerHTML = html;
+  }
+
+  const selectSiswa = document.getElementById("selectSiswa");
+  if (selectSiswa) {
+    let html = '<option value="">-- Pilih Nama Siswa --</option>';
+    masterSiswa.forEach(s => {
+      let n = s.NAMA || s.Nama || s.nama;
+      let k = s.KELAS || s.Kelas || s.kelas || '';
+      if (n) html += `<option value="${n}${k ? ' - ' + k : ''}">${n}${k ? ' - ' + k : ''}</option>`;
+    });
+    selectSiswa.innerHTML = html;
+  }
+}
+
+window.onGuruSelectChanged = function() {
+  const selectedNama = document.getElementById("selectGuru").value;
+  const selectMapel = document.getElementById("selectGuruMapel");
+
+  if (!selectedNama) {
+    selectMapel.innerHTML = '<option value="">-- Pilih Guru Terlebih Dahulu --</option>';
+    return;
+  }
+
+  const guruObj = masterGuru.find(g => (g.NAMA || g.Nama || g.nama) === selectedNama);
+  if (guruObj) {
+    let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
+    if (mapelStr) {
+      let listMapel = mapelStr.toString().split(',').map(m => m.trim()).filter(m => m !== '');
+      let html = '<option value="">-- Pilih Mapel --</option>';
+      listMapel.forEach(m => { html += `<option value="${m}">${m}</option>`; });
+      selectMapel.innerHTML = html;
+    } else {
+      selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
+    }
+  } else {
+    selectMapel.innerHTML = '<option value="Umum">Umum / Tanpa Mapel</option>';
+  }
+};
