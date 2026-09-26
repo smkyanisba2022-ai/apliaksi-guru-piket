@@ -181,5 +181,15 @@
   </main>
 
   <script src="app.js"></script>
+  <!-- Modal Loading Overlay -->
+<div id="loadingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center hidden">
+  <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3 text-center max-w-xs w-full mx-4 animate-fade-in">
+    <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    <div>
+      <h4 id="loadingTitle" class="font-bold text-sm text-slate-800">Sedang Mengirim Data...</h4>
+      <p id="loadingDesc" class="text-xs text-slate-500 mt-1">Mohon tunggu sebentar, data sedang diunggah ke Spreadsheet.</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>
