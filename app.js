@@ -12,9 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMasterData();
   renderOfflineQueue();
 
-  window.addEventListener("online", updateOnlineStatus);
-  window.addEventListener("offline", updateOnlineStatus);
-  updateOnlineStatus();
+  // Listener event perubahan jaringan
+  window.addEventListener("online", checkRealOnlineStatus);
+  window.addEventListener("offline", checkRealOnlineStatus);
+
+  // Cek koneksi pertama kali saat halaman dimuat
+  checkRealOnlineStatus();
+
+  // Cek ulang koneksi nyata secara berkala setiap 5 detik
+  setInterval(checkRealOnlineStatus, 5000);
 });
 
 function startClock() {
@@ -27,15 +33,37 @@ function startClock() {
   setInterval(update, 1000);
 }
 
-function updateOnlineStatus() {
+// FUNGSI CEK KONEKSI REAL-TIME (Ping Internet & Kuota)
+async function checkRealOnlineStatus() {
   const el = document.getElementById("statusKoneksi");
-  if (navigator.onLine) {
-    el.className = "px-2.5 py-1 text-[10px] rounded-full bg-emerald-500 text-white font-semibold flex items-center gap-1 shadow-sm";
-    el.innerHTML = `<i class="fa-solid fa-wifi"></i> Online`;
-  } else {
-    el.className = "px-2.5 py-1 text-[10px] rounded-full bg-rose-500 text-white font-semibold flex items-center gap-1 shadow-sm";
-    el.innerHTML = `<i class="fa-solid fa-plane"></i> Offline`;
+  if (!el) return;
+
+  // Jika jaringan HP/Browser terputus
+  if (!navigator.onLine) {
+    showOfflineStatus(el);
+    return;
   }
+
+  // Melakukan Ping ringan untuk memastikan kuota internet benar-benar aktif
+  try {
+    await fetch("https://www.gstatic.com/generate_204", {
+      method: "HEAD",
+      mode: "no-cors",
+      cache: "no-store"
+    });
+
+    // Jika berhasil ping, tampilkan Status Online
+    el.className = "px-2.5 py-1 text-[10px] rounded-full bg-emerald-500 text-white font-semibold flex items-center gap-1 shadow-sm transition-all";
+    el.innerHTML = `<i class="fa-solid fa-wifi"></i> Online`;
+  } catch (err) {
+    // Jika ping gagal (misal kuota habis / koneksi terisolasi)
+    showOfflineStatus(el);
+  }
+}
+
+function showOfflineStatus(el) {
+  el.className = "px-2.5 py-1 text-[10px] rounded-full bg-rose-500 text-white font-semibold flex items-center gap-1 shadow-sm transition-all";
+  el.innerHTML = `<i class="fa-solid fa-plane"></i> Offline`;
 }
 
 // HELPER KONTROL LOADING SPINNER TOMBOL
@@ -304,7 +332,7 @@ window.syncOfflineData = async function(e) {
   setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", false, "Mengunggah...", "Upload Semua ke Spreadsheet");
 
   alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
-  
+
   if (document.getElementById("sectionPantau").style.display !== "none") {
     loadDataPantau();
   }
