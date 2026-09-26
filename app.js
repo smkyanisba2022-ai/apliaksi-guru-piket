@@ -305,7 +305,7 @@ window.syncOfflineData = async function(e) {
   if (offlineQueue.length === 0) return;
   if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Spreadsheet?`)) return;
 
-  setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", true, "Mengunggah...", "Upload Semua ke Spreadsheet");
+  setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", true, "Mengunggah...", "Upload Semua ke Pusat");
 
   let successCount = 0;
   let remaining = [];
