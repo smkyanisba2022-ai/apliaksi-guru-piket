@@ -85,12 +85,16 @@ function checkOnlineStatus() {
   }
 }
 
-// 4. MEMUAT DATA LAPORAN UNTUK TAB PANTAU
+// 4. MEMUAT DATA LAPORAN UNTUK TAB PANTAU (DAPAT DIPERINGKAS & DILENGKAPI PETUGAS PIKET)
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
 
-  container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6"><i class="fa-solid fa-spinner animate-spin"></i> Memuat data laporan terbaru...</p>`;
+  container.innerHTML = `
+    <div class="text-center py-8 text-slate-500">
+      <i class="fa-solid fa-spinner animate-spin text-2xl text-indigo-600 mb-2"></i>
+      <p class="text-xs font-medium">Memuat data laporan terbaru dari Spreadsheet...</p>
+    </div>`;
 
   try {
     const res = await fetch(`${SCRIPT_URL}?action=get_laporan`);
@@ -99,78 +103,138 @@ async function loadDataPantau() {
     if (data.status === 'success') {
       let html = "";
 
-      // --- TABEL LAPORAN GURU ---
-      html += `<div class="border rounded-lg p-3 bg-slate-50">
-        <h3 class="font-bold text-xs text-slate-700 mb-2 flex justify-between items-center">
-          <span><i class="fa-solid fa-chalkboard-user text-indigo-600 mr-1"></i> Rekap Laporan Guru</span>
-          <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">${data.guru.length > 1 ? data.guru.length - 1 : 0} Catatan</span>
-        </h3>`;
+      // ==========================================
+      // 1. TABEL REKAP LAPORAN GURU
+      // ==========================================
+      const totalGuru = data.guru && data.guru.length > 1 ? data.guru.length - 1 : 0;
+      
+      html += `
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+              <i class="fa-solid fa-chalkboard-user text-xs"></i>
+            </span>
+            Rekap Laporan Guru
+          </h3>
+          <span class="text-[11px] bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+            ${totalGuru} Catatan
+          </span>
+        </div>`;
 
-      if (data.guru && data.guru.length > 1) {
-        html += `<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-[11px]">
-          <thead>
-            <tr class="bg-slate-200 text-slate-700">
-              <th class="p-1.5 border">Tanggal/Waktu</th>
-              <th class="p-1.5 border">Guru & Mapel</th>
-              <th class="p-1.5 border">Status</th>
-              <th class="p-1.5 border">Tugas/Materi</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white">`;
+      if (totalGuru > 0) {
+        html += `
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <th class="p-2.5 border-r">Waktu</th>
+                <th class="p-2.5 border-r">Petugas Piket</th>
+                <th class="p-2.5 border-r">Guru & Mapel</th>
+                <th class="p-2.5 border-r text-center">Jam Ke</th>
+                <th class="p-2.5 border-r text-center">Jam Masuk</th>
+                <th class="p-2.5 border-r text-center">Status</th>
+                <th class="p-2.5">Tugas / Materi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
 
+        // Iterasi data dari yang terbaru (bottom-up)
         for (let i = data.guru.length - 1; i >= 1; i--) {
           const row = data.guru[i];
-          html += `<tr class="border-b hover:bg-slate-50">
-            <td class="p-1.5 text-slate-500 border whitespace-nowrap">${row[0] || '-'}</td>
-            <td class="p-1.5 font-semibold text-slate-800 border">${row[2] || '-'}</td>
-            <td class="p-1.5 border"><span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-bold">${row[5] || '-'}</span></td>
-            <td class="p-1.5 text-slate-600 border">${row[6] || '-'}</td>
-          </tr>`;
+          const tgl = row[0] || '-';
+          const petugas = row[1] || '-';
+          const guruMapel = row[2] || '-';
+          const jamKe = row[3] || '-';
+          const jamMasuk = row[4] || '-';
+          const status = row[5] || '-';
+          const tugas = row[6] || '-';
+
+          html += `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${tgl}</td>
+              <td class="p-2.5 border-r font-medium text-slate-800">${petugas}</td>
+              <td class="p-2.5 border-r font-semibold text-indigo-950">${guruMapel}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">${jamKe}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap text-slate-500">${jamMasuk}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">
+                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md font-semibold text-[11px]">${status}</span>
+              </td>
+              <td class="p-2.5 text-slate-600">${tugas}</td>
+            </tr>`;
         }
         html += `</tbody></table></div>`;
       } else {
-        html += `<p class="text-[11px] text-slate-400 italic">Belum ada laporan guru yang masuk.</p>`;
+        html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Belum ada laporan guru yang tercatat.</p>`;
       }
       html += `</div>`;
 
-      // --- TABEL LAPORAN SISWA ---
-      html += `<div class="border rounded-lg p-3 bg-slate-50">
-        <h3 class="font-bold text-xs text-slate-700 mb-2 flex justify-between items-center">
-          <span><i class="fa-solid fa-user-graduate text-indigo-600 mr-1"></i> Rekap Laporan Siswa</span>
-          <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">${data.siswa.length > 1 ? data.siswa.length - 1 : 0} Catatan</span>
-        </h3>`;
+      // ==========================================
+      // 2. TABEL REKAP LAPORAN SISWA
+      // ==========================================
+      const totalSiswa = data.siswa && data.siswa.length > 1 ? data.siswa.length - 1 : 0;
 
-      if (data.siswa && data.siswa.length > 1) {
-        html += `<div class="overflow-x-auto"><table class="w-full text-left border-collapse text-[11px]">
-          <thead>
-            <tr class="bg-slate-200 text-slate-700">
-              <th class="p-1.5 border">Tanggal/Waktu</th>
-              <th class="p-1.5 border">Siswa & Kelas</th>
-              <th class="p-1.5 border">Jam Ke</th>
-              <th class="p-1.5 border">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white">`;
+      html += `
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <i class="fa-solid fa-user-graduate text-xs"></i>
+            </span>
+            Rekap Laporan Siswa
+          </h3>
+          <span class="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
+            ${totalSiswa} Catatan
+          </span>
+        </div>`;
+
+      if (totalSiswa > 0) {
+        html += `
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <th class="p-2.5 border-r">Waktu</th>
+                <th class="p-2.5 border-r">Petugas Piket</th>
+                <th class="p-2.5 border-r">Siswa & Kelas</th>
+                <th class="p-2.5 border-r text-center">Jam Ke</th>
+                <th class="p-2.5 text-center">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
 
         for (let i = data.siswa.length - 1; i >= 1; i--) {
           const row = data.siswa[i];
-          html += `<tr class="border-b hover:bg-slate-50">
-            <td class="p-1.5 text-slate-500 border whitespace-nowrap">${row[0] || '-'}</td>
-            <td class="p-1.5 font-semibold text-slate-800 border">${row[2] || '-'}</td>
-            <td class="p-1.5 text-slate-600 border">${row[3] || '-'}</td>
-            <td class="p-1.5 border"><span class="px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded font-bold">${row[4] || '-'}</span></td>
-          </tr>`;
+          const tgl = row[0] || '-';
+          const petugas = row[1] || '-';
+          const siswaKelas = row[2] || '-';
+          const jamKe = row[3] || '-';
+          const ket = row[4] || '-';
+
+          html += `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${tgl}</td>
+              <td class="p-2.5 border-r font-medium text-slate-800">${petugas}</td>
+              <td class="p-2.5 border-r font-semibold text-slate-900">${siswaKelas}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap">${jamKe}</td>
+              <td class="p-2.5 text-center whitespace-nowrap">
+                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-md font-semibold text-[11px]">${ket}</span>
+              </td>
+            </tr>`;
         }
         html += `</tbody></table></div>`;
       } else {
-        html += `<p class="text-[11px] text-slate-400 italic">Belum ada laporan siswa yang masuk.</p>`;
+        html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Belum ada laporan siswa yang tercatat.</p>`;
       }
       html += `</div>`;
 
       container.innerHTML = html;
     }
   } catch (err) {
-    container.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">Gagal mengambil data laporan. Pastikan koneksi terhubung.</p>`;
+    container.innerHTML = `
+      <div class="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-4 rounded-xl text-center">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Gagal memuat data laporan. Pastikan koneksi internet aktif dan URL Web App sudah benar.
+      </div>`;
   }
 }
 
