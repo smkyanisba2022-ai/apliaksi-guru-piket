@@ -1,16 +1,17 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyeTlJJl3DhVpYV8Et_sYZN4o5Quiugzx-hrOmQ6IvtqYNUhfb_ya_VXBQhl2tmwPmj/exec";
+// GANTI DENGAN URL WEB APP HASIL DEPLOY APPS SCRIPT ANDA
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyalCgOu8JPnI0SOXi1YRtIGS_hSMbO0H5DWPLM7S71273KSuOnJXK0Id7b8Jl3C_eZ/exec";
 
 let masterSiswa = [];
 let masterGuru = [];
 let offlineQueue = JSON.parse(localStorage.getItem("piket_offline_queue") || "[]");
 
-// 1. INISIALISASI & JAM REALTIME
+// 1. INISIALISASI HALAMAN & JAM REALTIME
 document.addEventListener("DOMContentLoaded", () => {
   startClock();
   generateJamKeOptions();
   loadMasterData();
   renderOfflineQueue();
-  
+
   window.addEventListener("online", updateOnlineStatus);
   window.addEventListener("offline", updateOnlineStatus);
   updateOnlineStatus();
@@ -37,23 +38,23 @@ function updateOnlineStatus() {
   }
 }
 
-// 2. DROPDOWN JAM KE- (1 S/D 12 & KOMBINASI)
+// 2. GENERATE DROPDOWN "JAM KE-" (1 s/d 12 DAN OPSI KOMBINASI)
 function generateJamKeOptions() {
-  const options = ['<option value="">-- Pilih Jam Ke --</option>'];
+  let options = ['<option value="">-- Pilih Jam Ke --</option>'];
   for (let i = 1; i <= 12; i++) {
     options.push(`<option value="${i}">Jam Ke-${i}</option>`);
   }
-  options.push('<option value="1-2">Jam Ke-1-2</option>');
-  options.push('<option value="3-4">Jam Ke-3-4</option>');
-  options.push('<option value="5-6">Jam Ke-5-6</option>');
-  options.push('<option value="7-8">Jam Ke-7-8</option>');
+  options.push('<option value="1-2">Jam Ke 1-2</option>');
+  options.push('<option value="3-4">Jam Ke 3-4</option>');
+  options.push('<option value="5-6">Jam Ke 5-6</option>');
+  options.push('<option value="7-8">Jam Ke 7-8</option>');
   options.push('<option value="Full">Penuh / Seharian</option>');
 
   document.getElementById("guruJamKe").innerHTML = options.join('');
   document.getElementById("siswaJamKe").innerHTML = options.join('');
 }
 
-// 3. SWITCH TAB MENU
+// 3. TAB NAVIGATION
 window.switchTab = function(e, tab) {
   if (e) {
     e.preventDefault();
@@ -92,37 +93,51 @@ window.switchTab = function(e, tab) {
   }
 };
 
-// 4. MEMUAT MASTER DATA GURU & SISWA DARI EXCEL/SHEET
+// 4. MEMUAT DATA MASTER DARI SPREADSHEET (GURU & SISWA)
 async function loadMasterData() {
+  const statusG = document.getElementById("statusLoadGuru");
+  const statusS = document.getElementById("statusLoadSiswa");
+
   try {
     const res = await fetch(`${SCRIPT_URL}?action=get_master`);
     const data = await res.json();
+
     if (data.status === 'success') {
       masterSiswa = data.siswa || [];
       masterGuru = data.guru || [];
+
       renderDropdowns();
+
+      if (statusG) statusG.innerText = `[${masterGuru.length} Guru Loaded]`;
+      if (statusS) statusS.innerText = `[${masterSiswa.length} Siswa Loaded]`;
+    } else {
+      throw new Error("Gagal load data");
     }
   } catch (err) {
-    console.log("Gagal memuat master data online");
+    console.error("Gagal memuat master data:", err);
+    if (statusG) statusG.innerText = "[Gagal Muat Data Guru]";
+    if (statusS) statusS.innerText = "[Gagal Muat Data Siswa]";
   }
 }
 
 function renderDropdowns() {
+  // Render List Guru
   const selectGuru = document.getElementById("selectGuru");
   if (selectGuru) {
     let html = '<option value="">-- Pilih Nama Guru --</option>';
     masterGuru.forEach(g => {
-      let n = g.NAMA || g.Nama || g.nama;
+      let n = g.NAMA || g.Nama || g.nama || '';
       if (n) html += `<option value="${n}">${n}</option>`;
     });
     selectGuru.innerHTML = html;
   }
 
+  // Render List Siswa
   const selectSiswa = document.getElementById("selectSiswa");
   if (selectSiswa) {
     let html = '<option value="">-- Pilih Nama Siswa --</option>';
     masterSiswa.forEach(s => {
-      let n = s.NAMA || s.Nama || s.nama;
+      let n = s.NAMA || s.Nama || s.nama || '';
       let k = s.KELAS || s.Kelas || s.kelas || '';
       if (n) html += `<option value="${n}${k ? ' (' + k + ')' : ''}">${n}${k ? ' (' + k + ')' : ''}</option>`;
     });
@@ -130,7 +145,7 @@ function renderDropdowns() {
   }
 }
 
-// DROPDOWN MAPEL OTOMATIS BERDASARKAN GURU YANG DIPILIH
+// DROPDOWN MAPEL DINAMIS DARI GURU
 window.onGuruSelectChanged = function() {
   const selectedNama = document.getElementById("selectGuru").value;
   const selectMapel = document.getElementById("selectGuruMapel");
@@ -144,6 +159,7 @@ window.onGuruSelectChanged = function() {
   if (guruObj) {
     let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
     if (mapelStr) {
+      // Pecah jika mapel guru lebih dari satu (misal: "FARMAKOLOGI, TOI")
       let listMapel = mapelStr.toString().split(',').map(m => m.trim()).filter(m => m !== '');
       let html = '<option value="">-- Pilih Mapel --</option>';
       listMapel.forEach(m => { html += `<option value="${m}">${m}</option>`; });
@@ -156,7 +172,7 @@ window.onGuruSelectChanged = function() {
   }
 };
 
-// 5. PENANGANAN SIMPAN OFFLINE & KELOLA QUEUE
+// 5. MANAJEMEN CATATAN OFFLINE
 function saveToOfflineQueue(item) {
   offlineQueue.push(item);
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
@@ -190,10 +206,10 @@ function renderOfflineQueue() {
         <p class="text-[11px] text-slate-500 mt-0.5">Jam: ${item.jam_ke} | Ket: ${isGuru ? item.status : item.status_keterangan}</p>
       </div>
       <div class="flex items-center gap-1">
-        <button type="button" onclick="editOfflineItem(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]">
+        <button type="button" onclick="editOfflineItem(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]" title="Edit Item">
           <i class="fa-solid fa-pen"></i>
         </button>
-        <button type="button" onclick="deleteOfflineItem(${index})" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-[11px]">
+        <button type="button" onclick="deleteOfflineItem(${index})" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-[11px]" title="Hapus Item">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -211,7 +227,7 @@ window.toggleOfflinePanel = function() {
 };
 
 window.deleteOfflineItem = function(index) {
-  if (confirm("Hapus catatan offline ini?")) {
+  if (confirm("Apakah Anda yakin ingin menghapus catatan offline ini?")) {
     offlineQueue.splice(index, 1);
     localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
     renderOfflineQueue();
@@ -235,23 +251,20 @@ window.editOfflineItem = function(index) {
     document.getElementById("siswaStatus").value = item.status_keterangan || 'Izin Pulang';
   }
 
-  // Hapus dari antrean karena dimasukkan kembali ke form untuk diedit
   offlineQueue.splice(index, 1);
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
 };
 
-// UPLOAD SELURUH CATATAN OFFLINE KE SPREADSHEET
 window.syncOfflineData = async function(e) {
   if (e) e.stopPropagation();
   if (!navigator.onLine) {
-    alert("Koneksi masih offline. Mohon sambungkan ke internet terlebih dahulu.");
+    alert("Perangkat Anda masih offline. Hubungkan ke internet untuk melakukan upload.");
     return;
   }
 
   if (offlineQueue.length === 0) return;
-
-  if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Sheets?`)) return;
+  if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Spreadsheet?`)) return;
 
   let successCount = 0;
   let remaining = [];
@@ -274,13 +287,13 @@ window.syncOfflineData = async function(e) {
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
 
-  alert(`Berhasil mengunggah ${successCount} catatan ke Google Sheets!`);
+  alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
   if (document.getElementById("sectionPantau").style.display !== "none") {
     loadDataPantau();
   }
 };
 
-// SIMPAN OFFLINE ACTION (TOMBOL AMBER)
+// 6. ACTION SIMPAN OFFLINE BUTTONS
 window.simpanGuruOffline = function() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   const namaGuru = document.getElementById("selectGuru").value;
@@ -330,7 +343,7 @@ window.simpanSiswaOffline = function() {
   document.getElementById("formSiswa").reset();
 };
 
-// 6. SUBMIT LANGSUNG (UPLOAD KE GOOGLE APPS SCRIPT)
+// 7. ACTION UPLOAD LANGSUNG FORM SUBMIT
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
   const petugas = document.getElementById("petugasPiket").value.trim();
@@ -339,7 +352,7 @@ window.handleSubmitedGuru = async function(e) {
   const jamKe = document.getElementById("guruJamKe").value;
 
   if (!petugas || !namaGuru || !mapel || !jamKe) {
-    alert("Harap isi Petugas Piket, Guru, Mapel, dan Jam Ke!");
+    alert("Harap lengkapi Petugas Piket, Guru, Mapel, dan Jam Ke!");
     return;
   }
 
@@ -365,7 +378,7 @@ window.handleSubmitedSiswa = async function(e) {
   const jamKe = document.getElementById("siswaJamKe").value;
 
   if (!petugas || !namaSiswa || !jamKe) {
-    alert("Harap isi Petugas Piket, Siswa, dan Jam Ke!");
+    alert("Harap lengkapi Petugas Piket, Siswa, dan Jam Ke!");
     return;
   }
 
@@ -392,12 +405,12 @@ async function sendDataToServer(payload) {
     });
     alert("Laporan berhasil tersimpan ke Google Spreadsheet!");
   } catch (err) {
-    alert("Gagal terhubung. Menyimpan otomatis ke Catatan Offline.");
+    alert("Gagal koneksi server. Menyimpan otomatis ke Catatan Offline.");
     saveToOfflineQueue(payload);
   }
 }
 
-// 7. MEMUAT DATA UNTUK TAB PANTAU
+// 8. TAMPILAN TAB PANTAU REKAPITULASI
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
@@ -415,7 +428,7 @@ async function loadDataPantau() {
     if (data.status === 'success') {
       let html = `<div class="space-y-4">`;
 
-      // --- TABEL GURU ---
+      // Tabel Guru
       const totalGuru = data.guru && data.guru.length > 1 ? data.guru.length - 1 : 0;
       html += `
       <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -469,7 +482,7 @@ async function loadDataPantau() {
       }
       html += `</div>`;
 
-      // --- TABEL SISWA ---
+      // Tabel Siswa
       const totalSiswa = data.siswa && data.siswa.length > 1 ? data.siswa.length - 1 : 0;
       html += `
       <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -522,7 +535,7 @@ async function loadDataPantau() {
       container.innerHTML = html;
     }
   } catch (err) {
-    container.innerHTML = `<div class="p-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg text-center">Gagal memuat data laporan dari Spreadsheet.</div>`;
+    container.innerHTML = `<div class="p-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg text-center">Gagal memuat data rekapitulasi dari Spreadsheet.</div>`;
   }
 }
 
