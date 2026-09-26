@@ -303,7 +303,7 @@ window.syncOfflineData = async function(e) {
   }
 
   if (offlineQueue.length === 0) return;
-  if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Spreadsheet?`)) return;
+  if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Pusat?`)) return;
 
   setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", true, "Mengunggah...", "Upload Semua ke Pusat");
 
