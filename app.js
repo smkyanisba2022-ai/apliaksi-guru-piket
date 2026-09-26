@@ -38,7 +38,24 @@ function updateOnlineStatus() {
   }
 }
 
-// 2. GENERATE DROPDOWN "JAM KE-" (1 s/d 12 DAN OPSI KOMBINASI)
+// FUNGSIONALITAS LOADING OVERLAY
+function showLoading(title = "Sedang Mengirim Data...", desc = "Mohon tunggu sebentar, data sedang diunggah ke Spreadsheet.") {
+  const modal = document.getElementById("loadingModal");
+  if (modal) {
+    document.getElementById("loadingTitle").innerText = title;
+    document.getElementById("loadingDesc").innerText = desc;
+    modal.classList.remove("hidden");
+  }
+}
+
+function hideLoading() {
+  const modal = document.getElementById("loadingModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+// 2. GENERATE DROPDOWN "JAM KE-"
 function generateJamKeOptions() {
   let options = ['<option value="">-- Pilih Jam Ke --</option>'];
   for (let i = 1; i <= 12; i++) {
@@ -93,7 +110,7 @@ window.switchTab = function(e, tab) {
   }
 };
 
-// 4. MEMUAT DATA MASTER DARI SPREADSHEET (GURU & SISWA)
+// 4. MEMUAT DATA MASTER DARI SPREADSHEET
 async function loadMasterData() {
   const statusG = document.getElementById("statusLoadGuru");
   const statusS = document.getElementById("statusLoadSiswa");
@@ -159,7 +176,6 @@ window.onGuruSelectChanged = function() {
   if (guruObj) {
     let mapelStr = guruObj.MAPEL || guruObj.Mapel || guruObj.mapel || "";
     if (mapelStr) {
-      // Pecah jika mapel guru lebih dari satu (misal: "FARMAKOLOGI, TOI")
       let listMapel = mapelStr.toString().split(',').map(m => m.trim()).filter(m => m !== '');
       let html = '<option value="">-- Pilih Mapel --</option>';
       listMapel.forEach(m => { html += `<option value="${m}">${m}</option>`; });
@@ -172,7 +188,7 @@ window.onGuruSelectChanged = function() {
   }
 };
 
-// 5. MANAJEMEN CATATAN OFFLINE
+// 5. MANAJEMEN CATATAN OFFLINE (TOMBOL EDIT/PENSIL SUDAH DIHAPUS)
 function saveToOfflineQueue(item) {
   offlineQueue.push(item);
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
@@ -205,11 +221,9 @@ function renderOfflineQueue() {
         <span class="font-bold text-slate-800 ml-1.5">${isGuru ? item.nama_guru_mapel : item.nama_siswa}</span>
         <p class="text-[11px] text-slate-500 mt-0.5">Jam: ${item.jam_ke} | Ket: ${isGuru ? item.status : item.status_keterangan}</p>
       </div>
-      <div class="flex items-center gap-1">
-        <button type="button" onclick="editOfflineItem(${index})" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]" title="Edit Item">
-          <i class="fa-solid fa-pen"></i>
-        </button>
-        <button type="button" onclick="deleteOfflineItem(${index})" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-[11px]" title="Hapus Item">
+      <!-- HANYA TERSEDIA TOMBOL HAPUS SELEKTIF -->
+      <div>
+        <button type="button" onclick="deleteOfflineItem(${index})" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-[11px] transition-colors" title="Hapus Item">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -234,28 +248,7 @@ window.deleteOfflineItem = function(index) {
   }
 };
 
-window.editOfflineItem = function(index) {
-  const item = offlineQueue[index];
-  document.getElementById("petugasPiket").value = item.petugas_piket || '';
-
-  if (item.action === "simpan_laporan_guru") {
-    switchTab(null, 'guru');
-    document.getElementById("guruJamKe").value = item.jam_ke || '';
-    document.getElementById("guruJamMasuk").value = item.jam_masuk !== '-' ? item.jam_masuk : '';
-    document.getElementById("guruStatus").value = item.status || 'Hadir';
-    document.getElementById("guruTugas").value = item.tugas_materi !== '-' ? item.tugas_materi : '';
-  } else {
-    switchTab(null, 'siswa');
-    document.getElementById("selectSiswa").value = item.nama_siswa || '';
-    document.getElementById("siswaJamKe").value = item.jam_ke || '';
-    document.getElementById("siswaStatus").value = item.status_keterangan || 'Izin Pulang';
-  }
-
-  offlineQueue.splice(index, 1);
-  localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
-  renderOfflineQueue();
-};
-
+// PROSES UPLOAD OFFLINE DENGAN INDIKATOR LOADING
 window.syncOfflineData = async function(e) {
   if (e) e.stopPropagation();
   if (!navigator.onLine) {
@@ -266,10 +259,14 @@ window.syncOfflineData = async function(e) {
   if (offlineQueue.length === 0) return;
   if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Spreadsheet?`)) return;
 
+  showLoading("Mengunggah Catatan Offline...", `Sedang memproses ${offlineQueue.length} data ke Spreadsheet...`);
+
   let successCount = 0;
   let remaining = [];
 
-  for (let item of offlineQueue) {
+  for (let i = 0; i < offlineQueue.length; i++) {
+    let item = offlineQueue[i];
+    showLoading("Mengunggah Catatan Offline...", `Mengunggah data ke-${i + 1} dari ${offlineQueue.length}...`);
     try {
       await fetch(SCRIPT_URL, {
         method: "POST",
@@ -287,13 +284,15 @@ window.syncOfflineData = async function(e) {
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
 
+  hideLoading();
   alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
+  
   if (document.getElementById("sectionPantau").style.display !== "none") {
     loadDataPantau();
   }
 };
 
-// 6. ACTION SIMPAN OFFLINE BUTTONS
+// 6. ACTION SIMPAN OFFLINE
 window.simpanGuruOffline = function() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   const namaGuru = document.getElementById("selectGuru").value;
@@ -343,7 +342,7 @@ window.simpanSiswaOffline = function() {
   document.getElementById("formSiswa").reset();
 };
 
-// 7. ACTION UPLOAD LANGSUNG FORM SUBMIT
+// 7. ACTION UPLOAD LANGSUNG DENGAN INDIKATOR LOADING
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
   const petugas = document.getElementById("petugasPiket").value.trim();
@@ -367,7 +366,9 @@ window.handleSubmitedGuru = async function(e) {
     tugas_materi: document.getElementById("guruTugas").value || '-'
   };
 
+  showLoading("Mengunggah Laporan Guru...", "Mengirim data kehadiran guru ke Spreadsheet...");
   await sendDataToServer(payload);
+  hideLoading();
   e.target.reset();
 };
 
@@ -391,7 +392,9 @@ window.handleSubmitedSiswa = async function(e) {
     status_keterangan: document.getElementById("siswaStatus").value
   };
 
+  showLoading("Mengunggah Laporan Siswa...", "Mengirim data izin siswa ke Spreadsheet...");
   await sendDataToServer(payload);
+  hideLoading();
   e.target.reset();
 };
 
