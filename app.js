@@ -38,7 +38,7 @@ function updateOnlineStatus() {
   }
 }
 
-// HELPER KONTROL INDIKATOR LOADING PADA TOMBOL
+// HELPER KONTROL LOADING SPINNER TOMBOL
 function setButtonLoading(btnId, spinnerId, iconId, labelId, isLoading, loadingText = "Mengirim...", defaultText = "Kirim Laporan") {
   const btn = document.getElementById(btnId);
   const spinner = document.getElementById(spinnerId);
@@ -50,14 +50,26 @@ function setButtonLoading(btnId, spinnerId, iconId, labelId, isLoading, loadingT
   if (isLoading) {
     btn.disabled = true;
     btn.classList.add("opacity-75", "cursor-not-allowed");
-    if (spinner) spinner.classList.remove("hidden");
-    if (icon) icon.classList.add("hidden");
+    if (spinner) {
+      spinner.classList.remove("hidden");
+      spinner.style.display = "inline-block";
+    }
+    if (icon) {
+      icon.classList.add("hidden");
+      icon.style.display = "none";
+    }
     if (label) label.innerText = loadingText;
   } else {
     btn.disabled = false;
     btn.classList.remove("opacity-75", "cursor-not-allowed");
-    if (spinner) spinner.classList.add("hidden");
-    if (icon) icon.classList.remove("hidden");
+    if (spinner) {
+      spinner.classList.add("hidden");
+      spinner.style.display = "none";
+    }
+    if (icon) {
+      icon.classList.remove("hidden");
+      icon.style.display = "inline-block";
+    }
     if (label) label.innerText = defaultText;
   }
 }
@@ -195,7 +207,7 @@ window.onGuruSelectChanged = function() {
   }
 };
 
-// 5. MANAJEMEN CATATAN OFFLINE (TOMBOL HAPUS SELEKTIF)
+// 5. MANAJEMEN CATATAN OFFLINE
 function saveToOfflineQueue(item) {
   offlineQueue.push(item);
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
@@ -254,7 +266,7 @@ window.deleteOfflineItem = function(index) {
   }
 };
 
-// 6. PROSES UPLOAD CATATAN OFFLINE (DENGAN SPINNER PADA TOMBOL ATAS)
+// 6. PROSES UPLOAD CATATAN OFFLINE (TOMBOL ATAS)
 window.syncOfflineData = async function(e) {
   if (e) e.stopPropagation();
   if (!navigator.onLine) {
@@ -265,7 +277,6 @@ window.syncOfflineData = async function(e) {
   if (offlineQueue.length === 0) return;
   if (!confirm(`Upload ${offlineQueue.length} catatan offline ke Google Spreadsheet?`)) return;
 
-  // Aktifkan animasi spinner pada tombol offline
   setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", true, "Mengunggah...", "Upload Semua ke Spreadsheet");
 
   let successCount = 0;
@@ -290,7 +301,6 @@ window.syncOfflineData = async function(e) {
   localStorage.setItem("piket_offline_queue", JSON.stringify(offlineQueue));
   renderOfflineQueue();
 
-  // Matikan spinner tombol offline
   setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", false, "Mengunggah...", "Upload Semua ke Spreadsheet");
 
   alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
@@ -300,7 +310,7 @@ window.syncOfflineData = async function(e) {
   }
 };
 
-// 7. PROSES CATAT OFFLINE BUKAN SERVER
+// 7. ACTION SIMPAN OFFLINE
 window.simpanGuruOffline = function() {
   const petugas = document.getElementById("petugasPiket").value.trim();
   const namaGuru = document.getElementById("selectGuru").value;
@@ -350,7 +360,7 @@ window.simpanSiswaOffline = function() {
   document.getElementById("formSiswa").reset();
 };
 
-// 8. PROSES UPLOAD LANGSUNG (DENGAN SPINNER PADA TOMBOL BAWAH)
+// 8. PROSES UPLOAD LANGSUNG (TOMBOL BAWAH)
 window.handleSubmitedGuru = async function(e) {
   e.preventDefault();
   const petugas = document.getElementById("petugasPiket").value.trim();
@@ -374,12 +384,10 @@ window.handleSubmitedGuru = async function(e) {
     tugas_materi: document.getElementById("guruTugas").value || '-'
   };
 
-  // Aktifkan spinner di tombol Guru
   setButtonLoading("btnSubmitGuru", "spinnerGuru", "iconGuru", "labelGuru", true, "Mengirim...", "Kirim Laporan");
 
   await sendDataToServer(payload);
 
-  // Matikan spinner di tombol Guru
   setButtonLoading("btnSubmitGuru", "spinnerGuru", "iconGuru", "labelGuru", false, "Mengirim...", "Kirim Laporan");
 
   e.target.reset();
@@ -405,12 +413,10 @@ window.handleSubmitedSiswa = async function(e) {
     status_keterangan: document.getElementById("siswaStatus").value
   };
 
-  // Aktifkan spinner di tombol Siswa
   setButtonLoading("btnSubmitSiswa", "spinnerSiswa", "iconSiswa", "labelSiswa", true, "Mengirim...", "Kirim Laporan");
 
   await sendDataToServer(payload);
 
-  // Matikan spinner di tombol Siswa
   setButtonLoading("btnSubmitSiswa", "spinnerSiswa", "iconSiswa", "labelSiswa", false, "Mengirim...", "Kirim Laporan");
 
   e.target.reset();
@@ -431,7 +437,7 @@ async function sendDataToServer(payload) {
   }
 }
 
-// 9. TAMPILAN TAB PANTAU REKAPITULASI
+// 9. REKAPITULASI
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
@@ -449,7 +455,6 @@ async function loadDataPantau() {
     if (data.status === 'success') {
       let html = `<div class="space-y-4">`;
 
-      // Tabel Guru
       const totalGuru = data.guru && data.guru.length > 1 ? data.guru.length - 1 : 0;
       html += `
       <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -503,7 +508,6 @@ async function loadDataPantau() {
       }
       html += `</div>`;
 
-      // Tabel Siswa
       const totalSiswa = data.siswa && data.siswa.length > 1 ? data.siswa.length - 1 : 0;
       html += `
       <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
