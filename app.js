@@ -331,7 +331,7 @@ window.syncOfflineData = async function(e) {
 
   setButtonLoading("btnSyncOffline", "spinnerOffline", "iconOffline", "labelOffline", false, "Mengunggah...", "Upload Semua ke Pusat");
 
-  alert(`Berhasil mengunggah ${successCount} catatan ke Google Spreadsheet!`);
+  alert(`Berhasil mengunggah ${successCount} catatan ke Pusat!`);
 
   if (document.getElementById("sectionPantau").style.display !== "none") {
     loadDataPantau();
@@ -458,7 +458,7 @@ async function sendDataToServer(payload) {
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload)
     });
-    alert("Laporan berhasil tersimpan ke Google Spreadsheet!");
+    alert("Laporan berhasil tersimpan ke Pusat!");
   } catch (err) {
     alert("Gagal koneksi server. Menyimpan otomatis ke Catatan Offline.");
     saveToOfflineQueue(payload);
@@ -473,7 +473,7 @@ async function loadDataPantau() {
   container.innerHTML = `
     <div class="text-center py-8 text-slate-500">
       <i class="fa-solid fa-spinner animate-spin text-2xl text-indigo-600 mb-2"></i>
-      <p class="text-xs font-medium">Memuat data rekapitulasi dari Spreadsheet...</p>
+      <p class="text-xs font-medium">Memuat data rekapitulasi dari Pusat...</p>
     </div>`;
 
   try {
@@ -588,7 +588,7 @@ async function loadDataPantau() {
       container.innerHTML = html;
     }
   } catch (err) {
-    container.innerHTML = `<div class="p-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg text-center">Gagal memuat data rekapitulasi dari Spreadsheet.</div>`;
+    container.innerHTML = `<div class="p-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg text-center">Gagal memuat data rekapitulasi dari Pusat.</div>`;
   }
 }
 
