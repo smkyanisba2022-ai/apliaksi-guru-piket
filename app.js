@@ -510,7 +510,7 @@ async function loadDataPantau() {
                 <th class="p-2.5 border-r text-center">Jam Ke</th>
                 <th class="p-2.5 border-r text-center">Jam Masuk</th>
                 <th class="p-2.5 border-r text-center">Status</th>
-                <th class="p-2.5">Tugas / Materi</th>
+                <th class="p-2.5">Kelas & Tugas / Materi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
