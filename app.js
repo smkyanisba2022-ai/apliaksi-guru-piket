@@ -356,7 +356,7 @@ window.simpanGuruOffline = function() {
     petugas_piket: petugas,
     nama_guru_mapel: `${namaGuru} [${mapel}]`,
     jam_ke: jamKe,
-    jam_masuk: document.getElementById("guruJamMasuk").value || '-',
+    jam_masuk: document.getElementById("guruKelas").value || '-',
     status: document.getElementById("guruStatus").value,
     tugas_materi: document.getElementById("guruTugas").value || '-'
   };
@@ -407,7 +407,7 @@ window.handleSubmitedGuru = async function(e) {
     petugas_piket: petugas,
     nama_guru_mapel: `${namaGuru} [${mapel}]`,
     jam_ke: jamKe,
-    jam_masuk: document.getElementById("guruJamMasuk").value || '-',
+    jam_masuk: document.getElementById("guruKelas").value || '-',
     status: document.getElementById("guruStatus").value,
     tugas_materi: document.getElementById("guruTugas").value || '-'
   };
