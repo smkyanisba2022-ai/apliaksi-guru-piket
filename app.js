@@ -5,6 +5,10 @@ let masterSiswa = [];
 let masterGuru = [];
 let offlineQueue = JSON.parse(localStorage.getItem("piket_offline_queue") || "[]");
 
+// VARIABEL PENAMPUNG DATA MASTER REKAP
+let rawLaporanGuru = [];
+let rawLaporanSiswa = [];
+
 // 1. INISIALISASI HALAMAN & JAM REALTIME
 document.addEventListener("DOMContentLoaded", () => {
   startClock();
@@ -465,7 +469,7 @@ async function sendDataToServer(payload) {
   }
 }
 
-// 9. REKAPITULASI
+// 9. REKAPITULASI (MEMUAT DATA UTAMA)
 async function loadDataPantau() {
   const container = document.getElementById("tabelLaporanContainer");
   if (!container) return;
@@ -481,116 +485,173 @@ async function loadDataPantau() {
     const data = await res.json();
 
     if (data.status === 'success') {
-      let html = `<div class="space-y-4">`;
+      rawLaporanGuru = data.guru || [];
+      rawLaporanSiswa = data.siswa || [];
 
-      const totalGuru = data.guru && data.guru.length > 1 ? data.guru.length - 1 : 0;
-      html += `
-      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
-            <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-              <i class="fa-solid fa-chalkboard-user text-xs"></i>
-            </span>
-            Rekap Laporan Guru
-          </h3>
-          <span class="text-[11px] bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full border border-indigo-100">
-            ${totalGuru} Catatan
-          </span>
-        </div>`;
+      // Render pertama kali (tampilkan semua)
+      renderTabelRekap(rawLaporanGuru, rawLaporanSiswa);
 
-      if (totalGuru > 0) {
-        html += `
-        <div class="overflow-x-auto rounded-lg border border-slate-200">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2.5 border-r">Waktu</th>
-                <th class="p-2.5 border-r">Petugas Piket</th>
-                <th class="p-2.5 border-r">Guru & Mapel</th>
-                <th class="p-2.5 border-r text-center">Jam Ke</th>
-                <th class="p-2.5 border-r text-center">Kelas</th>
-                <th class="p-2.5 border-r text-center">Status</th>
-                <th class="p-2.5">Tugas / Materi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
-
-        for (let i = data.guru.length - 1; i >= 1; i--) {
-          const r = data.guru[i];
-          html += `
-            <tr class="hover:bg-slate-50 transition-colors">
-              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
-              <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
-              <td class="p-2.5 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
-              <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2.5 border-r text-center whitespace-nowrap font-medium text-indigo-700">${r[4] || '-'}</td>
-              <td class="p-2.5 border-r text-center whitespace-nowrap">
-                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[10px]">${r[5] || '-'}</span>
-              </td>
-              <td class="p-2.5 text-slate-600">${r[6] || '-'}</td>
-            </tr>`;
-        }
-        html += `</tbody></table></div>`;
-      } else {
-        html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Belum ada laporan guru.</p>`;
-      }
-      html += `</div>`;
-
-      const totalSiswa = data.siswa && data.siswa.length > 1 ? data.siswa.length - 1 : 0;
-      html += `
-      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
-            <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-              <i class="fa-solid fa-user-graduate text-xs"></i>
-            </span>
-            Rekap Laporan Siswa
-          </h3>
-          <span class="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-100">
-            ${totalSiswa} Catatan
-          </span>
-        </div>`;
-
-      if (totalSiswa > 0) {
-        html += `
-        <div class="overflow-x-auto rounded-lg border border-slate-200">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="p-2.5 border-r">Waktu</th>
-                <th class="p-2.5 border-r">Petugas Piket</th>
-                <th class="p-2.5 border-r">Siswa & Kelas</th>
-                <th class="p-2.5 border-r text-center">Jam Ke</th>
-                <th class="p-2.5 text-center">Keterangan</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
-
-        for (let i = data.siswa.length - 1; i >= 1; i--) {
-          const r = data.siswa[i];
-          html += `
-            <tr class="hover:bg-slate-50 transition-colors">
-              <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
-              <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
-              <td class="p-2.5 border-r font-semibold text-slate-900">${r[2] || '-'}</td>
-              <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2.5 text-center whitespace-nowrap">
-                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-semibold text-[10px]">${r[4] || '-'}</span>
-              </td>
-            </tr>`;
-        }
-        html += `</tbody></table></div>`;
-      } else {
-        html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Belum ada laporan siswa.</p>`;
-      }
-      html += `</div></div>`;
-
-      container.innerHTML = html;
+      // Reset nilai input filter tanggal jika ada
+      const filterInput = document.getElementById("filterTanggal");
+      if (filterInput) filterInput.value = "";
+    } else {
+      throw new Error("Gagal mengambil data");
     }
   } catch (err) {
     container.innerHTML = `<div class="p-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg text-center">Gagal memuat data rekapitulasi dari Pusat.</div>`;
   }
 }
+
+// FUNGSI RENDER TABEL DENGAN FORMAT PERSIS SEPERTI TAMPILAN AWAL
+function renderTabelRekap(dataGuru, dataSiswa) {
+  const container = document.getElementById("tabelLaporanContainer");
+  if (!container) return;
+
+  let html = `<div class="space-y-4">`;
+
+  // --- REKAP LAPORAN GURU ---
+  const totalGuru = dataGuru && dataGuru.length > 1 ? dataGuru.length - 1 : 0;
+  html += `
+  <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+          <i class="fa-solid fa-chalkboard-user text-xs"></i>
+        </span>
+        Rekap Laporan Guru
+      </h3>
+      <span class="text-[11px] bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full border border-indigo-100">
+        ${totalGuru} Catatan
+      </span>
+    </div>`;
+
+  if (totalGuru > 0) {
+    html += `
+    <div class="overflow-x-auto rounded-lg border border-slate-200">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <th class="p-2.5 border-r">Waktu</th>
+            <th class="p-2.5 border-r">Petugas Piket</th>
+            <th class="p-2.5 border-r">Guru & Mapel</th>
+            <th class="p-2.5 border-r text-center">Jam Ke</th>
+            <th class="p-2.5 border-r text-center">Kelas</th>
+            <th class="p-2.5 border-r text-center">Status</th>
+            <th class="p-2.5">Tugas / Materi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
+
+    for (let i = dataGuru.length - 1; i >= 1; i--) {
+      const r = dataGuru[i];
+      html += `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
+          <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
+          <td class="p-2.5 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
+          <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
+          <td class="p-2.5 border-r text-center whitespace-nowrap font-medium text-indigo-700">${r[4] || '-'}</td>
+          <td class="p-2.5 border-r text-center whitespace-nowrap">
+            <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[10px]">${r[5] || '-'}</span>
+          </td>
+          <td class="p-2.5 text-slate-600">${r[6] || '-'}</td>
+        </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  } else {
+    html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Tidak ada laporan guru pada tanggal ini.</p>`;
+  }
+  html += `</div>`;
+
+  // --- REKAP LAPORAN SISWA ---
+  const totalSiswa = dataSiswa && dataSiswa.length > 1 ? dataSiswa.length - 1 : 0;
+  html += `
+  <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+          <i class="fa-solid fa-user-graduate text-xs"></i>
+        </span>
+        Rekap Laporan Siswa
+      </h3>
+      <span class="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-100">
+        ${totalSiswa} Catatan
+      </span>
+    </div>`;
+
+  if (totalSiswa > 0) {
+    html += `
+    <div class="overflow-x-auto rounded-lg border border-slate-200">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <th class="p-2.5 border-r">Waktu</th>
+            <th class="p-2.5 border-r">Petugas Piket</th>
+            <th class="p-2.5 border-r">Siswa & Kelas</th>
+            <th class="p-2.5 border-r text-center">Jam Ke</th>
+            <th class="p-2.5 text-center">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white text-slate-700">`;
+
+    for (let i = dataSiswa.length - 1; i >= 1; i--) {
+      const r = dataSiswa[i];
+      html += `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-2.5 border-r text-slate-500 whitespace-nowrap text-[11px]">${r[0] || '-'}</td>
+          <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
+          <td class="p-2.5 border-r font-semibold text-slate-900">${r[2] || '-'}</td>
+          <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
+          <td class="p-2.5 text-center whitespace-nowrap">
+            <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-semibold text-[10px]">${r[4] || '-'}</span>
+          </td>
+        </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  } else {
+    html += `<p class="text-xs text-slate-400 italic py-3 text-center bg-slate-50 rounded-lg">Tidak ada laporan siswa pada tanggal ini.</p>`;
+  }
+  html += `</div></div>`;
+
+  container.innerHTML = html;
+}
+
+// 10. AKSI EKSEKUSI FILTER TANGGAL
+window.applyFilterTanggal = function() {
+  const dateVal = document.getElementById("filterTanggal").value;
+  if (!dateVal) {
+    renderTabelRekap(rawLaporanGuru, rawLaporanSiswa);
+    return;
+  }
+
+  // Mengubah YYYY-MM-DD dari input date ke komponen Hari/Bulan/Tahun
+  const [year, month, day] = dateVal.split("-");
+  const targetDay = parseInt(day, 10);
+  const targetMonth = parseInt(month, 10);
+  const targetYear = parseInt(year, 10);
+
+  const filterFn = (row, index) => {
+    if (index === 0) return true; // Tetap sertakan Header
+    const dateStr = row[0]; // Ambil data dari kolom Waktu / Tanggal
+    if (!dateStr) return false;
+
+    // Memeriksa variasi format tanggal seperti "27/9/2026" atau "27/09/2026"
+    return dateStr.includes(`${targetDay}/${targetMonth}/${targetYear}`) || 
+           dateStr.includes(`${day}/${month}/${year}`);
+  };
+
+  const filteredGuru = rawLaporanGuru.filter(filterFn);
+  const filteredSiswa = rawLaporanSiswa.filter(filterFn);
+
+  renderTabelRekap(filteredGuru, filteredSiswa);
+};
+
+// 11. AKSI RESET FILTER TANGGAL
+window.resetFilterTanggal = function() {
+  const filterInput = document.getElementById("filterTanggal");
+  if (filterInput) filterInput.value = "";
+  renderTabelRekap(rawLaporanGuru, rawLaporanSiswa);
+};
 
 function cleanJamDisplay(val) {
   if (!val || val === '-') return '-';
