@@ -508,7 +508,7 @@ async function loadDataPantau() {
                 <th class="p-2.5 border-r">Petugas Piket</th>
                 <th class="p-2.5 border-r">Guru & Mapel</th>
                 <th class="p-2.5 border-r text-center">Jam Ke</th>
-                <th class="p-2.5 border-r text-center">Jam Masuk</th>
+                <th class="p-2.5 border-r text-center">Kelas</th>
                 <th class="p-2.5 border-r text-center">Status</th>
                 <th class="p-2.5">Kelas & Tugas / Materi</th>
               </tr>
@@ -523,7 +523,7 @@ async function loadDataPantau() {
               <td class="p-2.5 border-r font-medium text-slate-800">${r[1] || '-'}</td>
               <td class="p-2.5 border-r font-semibold text-indigo-950">${r[2] || '-'}</td>
               <td class="p-2.5 border-r text-center whitespace-nowrap">${r[3] || '-'}</td>
-              <td class="p-2.5 border-r text-center whitespace-nowrap font-medium text-slate-700">${cleanJamDisplay(r[4])}</td>
+              <td class="p-2.5 border-r text-center whitespace-nowrap font-medium text-indigo-700">${r[4] || '-'}</td>
               <td class="p-2.5 border-r text-center whitespace-nowrap">
                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[10px]">${r[5] || '-'}</span>
               </td>
